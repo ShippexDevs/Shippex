@@ -1,0 +1,34 @@
+package com.shippex.constants;
+
+public enum Designation {
+    MASTER,
+    CHIEF_OFFICER,
+    SECOND_OFFICER,
+    THIRD_OFFICER,
+    DECK_CADET,
+    BOSUN,
+    ABLE_SEAMAN,
+    ORDINARY_SEAMAN,
+
+    CHIEF_ENGINEER,
+    SECOND_ENGINEER,
+    THIRD_ENGINEER,
+    FOURTH_ENGINEER,
+    JUNIOR_ENGINEER,
+    ENGINE_CADET,
+    OILER,
+    WIPER,
+    MOTORMAN,
+    FITTER,
+
+    ELECTRO_TECHNICAL_OFFICER,
+    ELECTRICIAN,
+
+    CHIEF_COOK,
+    SECOND_COOK,
+    MESSMAN,
+    STEWARD,
+    CHIEF_STEWARD,
+
+    PUMPMAN
+}
