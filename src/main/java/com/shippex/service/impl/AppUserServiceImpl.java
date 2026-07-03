@@ -75,7 +75,7 @@ public class AppUserServiceImpl implements AppUserService {
 
     @Override
     public boolean isUsernameAvailable(String username) {
-        Optional<AppUser> appUser = appUserRepository.findById(username);
+        Optional<AppUser> appUser = appUserRepository.findByUsername(username);
         return appUser.isEmpty();
     }
 }
