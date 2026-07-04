@@ -174,7 +174,7 @@ class AppUserServiceImplTest {
     @Test
     void isUsernameAvailable_shouldReturnTrue_whenUserDoesNotExist() {
 
-        when(appUserRepository.findById("john123"))
+        when(appUserRepository.findByUsername("john123"))
                 .thenReturn(Optional.empty());
 
         boolean available =
@@ -186,7 +186,7 @@ class AppUserServiceImplTest {
     @Test
     void isUsernameAvailable_shouldReturnFalse_whenUserExists() {
 
-        when(appUserRepository.findById("john123"))
+        when(appUserRepository.findByUsername("john123"))
                 .thenReturn(Optional.of(new AppUser()));
 
         boolean available =
