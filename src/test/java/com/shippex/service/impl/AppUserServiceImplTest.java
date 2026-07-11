@@ -13,6 +13,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.Optional;
 
@@ -28,6 +29,9 @@ class AppUserServiceImplTest {
 
     @Mock
     private OtpService otpService;
+
+    @Mock
+    private BCryptPasswordEncoder passwordEncoder;
 
     @InjectMocks
     private AppUserServiceImpl appUserService;
@@ -56,6 +60,9 @@ class AppUserServiceImplTest {
 
         when(otpService.isOtpVerified(request.getWhatsappContactNo()))
                 .thenReturn(true);
+
+        when(passwordEncoder.encode(request.getPassword()))
+                .thenReturn("$2a$encodedPassword");
 
         AppUser savedUser = new AppUser();
 
@@ -93,6 +100,9 @@ class AppUserServiceImplTest {
         when(otpService.isOtpVerified(anyString()))
                 .thenReturn(true);
 
+        when(passwordEncoder.encode(anyString()))
+                .thenReturn("$2a$encodedPassword");
+
         when(appUserRepository.save(any(AppUser.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -114,6 +124,9 @@ class AppUserServiceImplTest {
         when(otpService.isOtpVerified(anyString()))
                 .thenReturn(true);
 
+        when(passwordEncoder.encode(anyString()))
+                .thenReturn("$2a$encodedPassword");
+
         when(appUserRepository.save(any(AppUser.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -128,7 +141,7 @@ class AppUserServiceImplTest {
 
         assertThat(user.getName()).isEqualTo(request.getName());
         assertThat(user.getUsername()).isEqualTo(request.getUsername());
-        assertThat(user.getPassword()).isEqualTo(request.getPassword());
+        assertThat(user.getPassword()).isEqualTo("$2a$encodedPassword");
         assertThat(user.getEmail()).isEqualTo(request.getEmail());
         assertThat(user.getWhatsappContactNo()).isEqualTo(request.getWhatsappContactNo());
         assertThat(user.getDesignation()).isEqualTo(request.getDesignation());
@@ -158,6 +171,9 @@ class AppUserServiceImplTest {
 
         when(otpService.isOtpVerified(anyString()))
                 .thenReturn(true);
+
+        when(passwordEncoder.encode(anyString()))
+                .thenReturn("$2a$encodedPassword");
 
         RuntimeException exception = new RuntimeException("Database down");
 

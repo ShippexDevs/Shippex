@@ -1,0 +1,38 @@
+services:
+
+  redis:
+    image: redis:7-alpine
+    container_name: shippex-redis
+
+    ports:
+      - "6379:6379"
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+
+    container_name: shippex-backend
+
+    depends_on:
+      redis:
+        condition: service_healthy
+
+    ports:
+      - "8080:8080"
+
+    env_file:
+      - .env
+
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+    restart: unless-stopped
