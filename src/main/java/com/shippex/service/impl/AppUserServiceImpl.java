@@ -7,8 +7,11 @@ import com.shippex.exception.OtpException;
 import com.shippex.model.AppUser;
 import com.shippex.repository.AppUserRepository;
 import com.shippex.service.AppUserService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -17,11 +20,20 @@ import java.util.Optional;
 @Slf4j
 @Service
 public class AppUserServiceImpl implements AppUserService {
-    @Autowired
-    private AppUserRepository appUserRepository;
 
-    @Autowired
-    private OtpService otpService;
+    private final AppUserRepository appUserRepository;
+    private final OtpService otpService;
+    private final BCryptPasswordEncoder passwordEncoder;
+
+    public AppUserServiceImpl(
+            AppUserRepository appUserRepository,
+            OtpService otpService,
+            BCryptPasswordEncoder passwordEncoder) {
+
+        this.appUserRepository = appUserRepository;
+        this.otpService = otpService;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     @Override
     public RegisterAppUserResponse createAppUserDetails(RegisterAppUserRequest request) {
@@ -30,7 +42,7 @@ public class AppUserServiceImpl implements AppUserService {
 
         appUser.setName(request.getName());
         appUser.setUsername(request.getUsername());
-        appUser.setPassword(request.getPassword());
+        appUser.setPassword(passwordEncoder.encode(request.getPassword()));
 
         appUser.setEmail(request.getEmail());
 
@@ -77,5 +89,27 @@ public class AppUserServiceImpl implements AppUserService {
     public boolean isUsernameAvailable(String username) {
         Optional<AppUser> appUser = appUserRepository.findByUsername(username);
         return appUser.isEmpty();
+    }
+
+    @Override
+    public AppUser getByUsername(String username) {
+        log.info(
+                "Fetching user details for username={}",
+                username
+        );
+
+        return appUserRepository
+                .findByUsername(username)
+                .orElseThrow(() -> {
+
+                    log.warn(
+                            "User not found. username={}",
+                            username
+                    );
+
+                    return new UsernameNotFoundException(
+                            "User not found."
+                    );
+                });
     }
 }
