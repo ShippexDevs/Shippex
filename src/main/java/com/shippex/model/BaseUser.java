@@ -1,6 +1,8 @@
 package com.shippex.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.shippex.constants.AccountStatus;
+import com.shippex.constants.Role;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -21,6 +23,8 @@ public class BaseUser {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
     private String email;
+    private Role role;
+    private AccountStatus accountStatus;
 
     private LocalDateTime createdAt;
     private LocalDateTime lastUpdatedAt;

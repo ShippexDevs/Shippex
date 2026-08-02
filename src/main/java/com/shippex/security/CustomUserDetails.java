@@ -1,7 +1,10 @@
 package com.shippex.security;
 
-import com.shippex.model.AppUser;
+import com.shippex.constants.AccountStatus;
+import com.shippex.constants.Role;
+import com.shippex.model.BaseUser;
 import lombok.Getter;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -10,27 +13,30 @@ import java.util.List;
 
 @Getter
 public class CustomUserDetails implements UserDetails {
-    private final AppUser appUser;
+    private final BaseUser user;
 
-    public CustomUserDetails(AppUser appUser) {
-        this.appUser = appUser;
+    public CustomUserDetails(BaseUser user) {
+        this.user = user;
     }
 
     @Override
-    public Collection<SimpleGrantedAuthority> getAuthorities() {
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+
         return List.of(
-                new SimpleGrantedAuthority("ROLE_USER")
+                new SimpleGrantedAuthority(
+                        "ROLE_" + user.getRole().name()
+                )
         );
     }
 
     @Override
     public String getPassword() {
-        return appUser.getPassword();
+        return user.getPassword();
     }
 
     @Override
     public String getUsername() {
-        return appUser.getUsername();
+        return user.getUsername();
     }
 
     @Override
@@ -50,14 +56,22 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return Boolean.TRUE.equals(appUser.getVerified());
+        return user.getAccountStatus() == AccountStatus.ACTIVE;
     }
 
     public String getId() {
-        return appUser.getId();
+        return user.getId();
     }
 
     public String getName() {
-        return appUser.getName();
+        return user.getName();
+    }
+
+    public Role getRole() {
+        return user.getRole();
+    }
+
+    public BaseUser getUser() {
+        return user;
     }
 }

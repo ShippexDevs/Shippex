@@ -6,6 +6,7 @@ import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
@@ -31,19 +32,21 @@ public class JwtService {
         );
     }
 
-    public String generateToken(CustomUserDetails user) {
-        log.debug("Generating JWT for username={}", user.getUsername());
+    public String generateToken(UserDetails userDetails) {
+
+        if (!(userDetails instanceof CustomUserDetails customUser)) {
+            throw new IllegalArgumentException("Unsupported UserDetails implementation");
+        }
+
+        log.debug("Generating JWT for username={}", customUser.getUsername());
+
         return Jwts.builder()
-                .subject(user.getUsername())
-                .claim("userId", user.getId())
-                .claim("name", user.getName())
+                .subject(customUser.getUsername())
+                .claim("userId", customUser.getId())
+                .claim("name", customUser.getName())
+                .claim("role", customUser.getRole().name())
                 .issuedAt(new Date())
-                .expiration(
-                        new Date(
-                                System.currentTimeMillis()
-                                        + jwtExpiration
-                        )
-                )
+                .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
                 .signWith(secretKey)
                 .compact();
     }

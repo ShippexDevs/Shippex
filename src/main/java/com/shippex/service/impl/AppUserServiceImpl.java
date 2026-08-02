@@ -1,5 +1,7 @@
 package com.shippex.service.impl;
 
+import com.shippex.constants.AccountStatus;
+import com.shippex.constants.Role;
 import com.shippex.dto.RegisterAppUserRequest;
 import com.shippex.dto.RegisterAppUserResponse;
 import com.shippex.dto.otp.GenerateOtpRequest;
@@ -48,6 +50,8 @@ public class AppUserServiceImpl implements AppUserService {
 
         appUser.setCreatedAt(LocalDateTime.now());
         appUser.setLastUpdatedAt(LocalDateTime.now());
+        appUser.setRole(Role.USER);
+        appUser.setAccountStatus(AccountStatus.ACTIVE);
 
         appUser.setWhatsappContactNo(request.getWhatsappContactNo());
         appUser.setDesignation(request.getDesignation());
