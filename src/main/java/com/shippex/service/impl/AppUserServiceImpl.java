@@ -5,8 +5,10 @@ import com.shippex.constants.Role;
 import com.shippex.dto.RegisterAppUserRequest;
 import com.shippex.dto.RegisterAppUserResponse;
 import com.shippex.dto.otp.GenerateOtpRequest;
+import com.shippex.exception.DuplicateUsernameException;
 import com.shippex.exception.OtpException;
 import com.shippex.model.AppUser;
+import com.shippex.repository.AdminUserRepository;
 import com.shippex.repository.AppUserRepository;
 import com.shippex.service.AppUserService;
 import lombok.RequiredArgsConstructor;
@@ -24,15 +26,18 @@ import java.util.Optional;
 public class AppUserServiceImpl implements AppUserService {
 
     private final AppUserRepository appUserRepository;
+    private final AdminUserRepository adminUserRepository;
     private final OtpService otpService;
     private final BCryptPasswordEncoder passwordEncoder;
 
     public AppUserServiceImpl(
             AppUserRepository appUserRepository,
             OtpService otpService,
-            BCryptPasswordEncoder passwordEncoder) {
+            BCryptPasswordEncoder passwordEncoder,
+            AdminUserRepository adminUserRepository) {
 
         this.appUserRepository = appUserRepository;
+        this.adminUserRepository = adminUserRepository;
         this.otpService = otpService;
         this.passwordEncoder = passwordEncoder;
     }
@@ -91,9 +96,16 @@ public class AppUserServiceImpl implements AppUserService {
 
     @Override
     public boolean isUsernameAvailable(String username) {
-        Optional<AppUser> appUser = appUserRepository.findByUsername(username);
-        return appUser.isEmpty();
+
+        boolean appUserExists =
+                appUserRepository.existsByUsername(username);
+
+        boolean adminUserExists =
+                adminUserRepository.existsByUsername(username);
+
+        return !appUserExists && !adminUserExists;
     }
+
 
     @Override
     public AppUser getByUsername(String username) {

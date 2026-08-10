@@ -8,6 +8,7 @@ import com.shippex.exception.DuplicateEmailException;
 import com.shippex.exception.DuplicateUsernameException;
 import com.shippex.model.AdminUser;
 import com.shippex.repository.AdminUserRepository;
+import com.shippex.repository.AppUserRepository;
 import com.shippex.security.CustomUserDetails;
 import com.shippex.security.JwtService;
 import com.shippex.service.AdminService;
@@ -28,6 +29,7 @@ import java.util.List;
 @Service
 public class AdminServiceImpl implements AdminService {
     private final AdminUserRepository adminUserRepository;
+    private final AppUserRepository appUserRepository;
     private final PasswordEncoder passwordEncoder;
     private final PasswordGenerator passwordGenerator;
     private final AdminMapper adminMapper;
@@ -74,9 +76,17 @@ public class AdminServiceImpl implements AdminService {
 
     private void validateUsername(String username) {
 
-        log.debug("Checking username availability.");
+        log.debug(
+                "Checking username availability across user types."
+        );
 
-        if (adminUserRepository.existsByUsername(username)) {
+        boolean adminExists =
+                adminUserRepository.existsByUsername(username);
+
+        boolean appUserExists =
+                appUserRepository.existsByUsername(username);
+
+        if (adminExists || appUserExists) {
             throw new DuplicateUsernameException(username);
         }
     }
