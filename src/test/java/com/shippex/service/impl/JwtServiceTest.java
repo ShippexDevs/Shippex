@@ -42,6 +42,9 @@ class JwtServiceTest {
                 "$2a$10$hashedPassword"
         );
 
+        appUser.setRole(Role.USER);
+        appUser.setAccountStatus(AccountStatus.ACTIVE);
+
         user = new CustomUserDetails(appUser);
     }
 
@@ -94,6 +97,8 @@ class JwtServiceTest {
                 "password"
         );
 
+        anotherUser.setRole(Role.USER);
+        anotherUser.setAccountStatus(AccountStatus.ACTIVE);
 
         CustomUserDetails another =
                 new CustomUserDetails(anotherUser);
