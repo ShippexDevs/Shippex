@@ -11,6 +11,7 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -24,6 +25,7 @@ import java.util.List;
 
 @Configuration
 @RequiredArgsConstructor
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final UserDetailsServiceImpl userDetailsService;
@@ -49,17 +51,37 @@ public class SecurityConfig {
                 )
 
                 .exceptionHandling(exception ->
-                        exception.authenticationEntryPoint(authenticationEntryPoint)
+                        exception.authenticationEntryPoint(
+                                authenticationEntryPoint
+                        )
                 )
 
                 .authorizeHttpRequests(auth -> auth
 
+                        /*
+                         * Public endpoints
+                         */
                         .requestMatchers(
                                 "/api/public/**",
-                                "/actuator/**"
+                                "/actuator/**",
+                                "/api/test/email",
+                                "/api/admin/login",
+                                "/api/v1/products/**"
                         )
                         .permitAll()
 
+                        /*
+                         * Admin endpoints
+                         *
+                         * Only ADMIN and SUPER_ADMIN
+                         * can access /api/admin/**
+                         */
+                        .requestMatchers("/api/admin/**")
+                        .hasAnyRole("ADMIN", "SUPER_ADMIN")
+
+                        /*
+                         * Everything else requires authentication
+                         */
                         .anyRequest()
                         .authenticated()
                 )
@@ -97,7 +119,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
 
-        CorsConfiguration configuration = new CorsConfiguration();
+        CorsConfiguration configuration =
+                new CorsConfiguration();
 
         configuration.setAllowedOrigins(
                 List.of(

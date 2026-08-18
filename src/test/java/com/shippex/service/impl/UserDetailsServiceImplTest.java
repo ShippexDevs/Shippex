@@ -1,6 +1,10 @@
 package com.shippex.service.impl;
 
+import com.shippex.constants.AccountStatus;
+import com.shippex.constants.Role;
+import com.shippex.model.AdminUser;
 import com.shippex.model.AppUser;
+import com.shippex.repository.AdminUserRepository;
 import com.shippex.repository.AppUserRepository;
 import com.shippex.security.CustomUserDetails;
 import com.shippex.service.security.UserDetailsServiceImpl;
@@ -15,20 +19,20 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
-//✅ Existing user returns CustomUserDetails
-//✅ User not found throws UsernameNotFoundException
-//✅ Unverified users are disabled (isEnabled() == false)
-//✅ ROLE_USER is assigned correctly
-//✅ Repository interaction occurs exactly as expected
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class UserDetailsServiceImplTest {
 
     @Mock
     private AppUserRepository appUserRepository;
+
+    @Mock
+    private AdminUserRepository adminUserRepository;
 
     @InjectMocks
     private UserDetailsServiceImpl userDetailsService;
@@ -44,7 +48,8 @@ class UserDetailsServiceImplTest {
         appUser.setName("John Doe");
         appUser.setUsername("john123");
         appUser.setPassword("$2a$10$hashedPassword");
-        appUser.setVerified(true);
+        appUser.setRole(Role.USER);
+        appUser.setAccountStatus(AccountStatus.ACTIVE);
     }
 
     @Test
@@ -74,11 +79,65 @@ class UserDetailsServiceImplTest {
         assertThat(user.getPassword())
                 .isEqualTo("$2a$10$hashedPassword");
 
+        assertThat(user.getRole())
+                .isEqualTo(Role.USER);
+
         assertThat(user.isEnabled())
                 .isTrue();
 
         verify(appUserRepository)
                 .findByUsername("john123");
+
+        verifyNoInteractions(adminUserRepository);
+    }
+
+    @Test
+    void loadUserByUsername_shouldReturnAdminUserDetails() {
+
+        AdminUser adminUser = new AdminUser();
+
+        adminUser.setId("admin-1");
+        adminUser.setName("Admin User");
+        adminUser.setUsername("admin123");
+        adminUser.setPassword("$2a$10$hashedPassword");
+        adminUser.setRole(Role.ADMIN);
+        adminUser.setAccountStatus(AccountStatus.ACTIVE);
+
+        when(appUserRepository.findByUsername("admin123"))
+                .thenReturn(Optional.empty());
+
+        when(adminUserRepository.findByUsername("admin123"))
+                .thenReturn(Optional.of(adminUser));
+
+        UserDetails result =
+                userDetailsService.loadUserByUsername("admin123");
+
+        assertThat(result)
+                .isInstanceOf(CustomUserDetails.class);
+
+        CustomUserDetails user =
+                (CustomUserDetails) result;
+
+        assertThat(user.getId())
+                .isEqualTo("admin-1");
+
+        assertThat(user.getName())
+                .isEqualTo("Admin User");
+
+        assertThat(user.getUsername())
+                .isEqualTo("admin123");
+
+        assertThat(user.getRole())
+                .isEqualTo(Role.ADMIN);
+
+        assertThat(user.isEnabled())
+                .isTrue();
+
+        verify(appUserRepository)
+                .findByUsername("admin123");
+
+        verify(adminUserRepository)
+                .findByUsername("admin123");
     }
 
     @Test
@@ -87,19 +146,25 @@ class UserDetailsServiceImplTest {
         when(appUserRepository.findByUsername("john123"))
                 .thenReturn(Optional.empty());
 
+        when(adminUserRepository.findByUsername("john123"))
+                .thenReturn(Optional.empty());
+
         assertThatThrownBy(() ->
                 userDetailsService.loadUserByUsername("john123"))
                 .isInstanceOf(UsernameNotFoundException.class)
-                .hasMessage("User not found.");
+                .hasMessage("User not found: john123");
 
         verify(appUserRepository)
+                .findByUsername("john123");
+
+        verify(adminUserRepository)
                 .findByUsername("john123");
     }
 
     @Test
-    void loadUserByUsername_shouldReturnDisabledUser_whenUserIsNotVerified() {
+    void loadUserByUsername_shouldReturnDisabledUser_whenAccountIsDisabled() {
 
-        appUser.setVerified(false);
+        appUser.setAccountStatus(AccountStatus.DISABLED);
 
         when(appUserRepository.findByUsername("john123"))
                 .thenReturn(Optional.of(appUser));
@@ -110,10 +175,15 @@ class UserDetailsServiceImplTest {
 
         assertThat(user.isEnabled())
                 .isFalse();
+
+        verify(appUserRepository)
+                .findByUsername("john123");
+
+        verifyNoInteractions(adminUserRepository);
     }
 
     @Test
-    void loadUserByUsername_shouldAlwaysAssignRoleUser() {
+    void loadUserByUsername_shouldReturnCorrectRoleForAppUser() {
 
         when(appUserRepository.findByUsername("john123"))
                 .thenReturn(Optional.of(appUser));
@@ -128,5 +198,10 @@ class UserDetailsServiceImplTest {
         assertThat(user.getAuthorities())
                 .extracting("authority")
                 .containsExactly("ROLE_USER");
+
+        verify(appUserRepository)
+                .findByUsername("john123");
+
+        verifyNoInteractions(adminUserRepository);
     }
 }

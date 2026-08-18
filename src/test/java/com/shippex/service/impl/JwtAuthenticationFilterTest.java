@@ -1,5 +1,7 @@
 package com.shippex.service.impl;
 
+import com.shippex.constants.AccountStatus;
+import com.shippex.constants.Role;
 import com.shippex.model.AppUser;
 import com.shippex.security.CustomUserDetails;
 import com.shippex.security.JwtAuthenticationFilter;
@@ -57,7 +59,9 @@ class JwtAuthenticationFilterTest {
         appUser.setName("John Doe");
         appUser.setUsername("john123");
         appUser.setPassword("password");
-        appUser.setVerified(true);
+
+        appUser.setRole(Role.USER);
+        appUser.setAccountStatus(AccountStatus.ACTIVE);
 
         user = new CustomUserDetails(appUser);
 
@@ -74,7 +78,7 @@ class JwtAuthenticationFilterTest {
     void shouldContinueFilter_whenAuthorizationHeaderIsMissing()
             throws ServletException, IOException {
 
-        jwtAuthenticationFilter.doFilterInternal(
+        jwtAuthenticationFilter.doFilter(
                 request,
                 response,
                 filterChain
@@ -84,7 +88,6 @@ class JwtAuthenticationFilterTest {
                 .doFilter(request, response);
 
         verifyNoInteractions(jwtService);
-
         verifyNoInteractions(userDetailsService);
 
         assertThat(
@@ -103,7 +106,7 @@ class JwtAuthenticationFilterTest {
                 "Basic abc123"
         );
 
-        jwtAuthenticationFilter.doFilterInternal(
+        jwtAuthenticationFilter.doFilter(
                 request,
                 response,
                 filterChain
@@ -113,7 +116,6 @@ class JwtAuthenticationFilterTest {
                 .doFilter(request, response);
 
         verifyNoInteractions(jwtService);
-
         verifyNoInteractions(userDetailsService);
 
         assertThat(
@@ -143,7 +145,7 @@ class JwtAuthenticationFilterTest {
                 user
         )).thenReturn(true);
 
-        jwtAuthenticationFilter.doFilterInternal(
+        jwtAuthenticationFilter.doFilter(
                 request,
                 response,
                 filterChain
@@ -155,11 +157,24 @@ class JwtAuthenticationFilterTest {
                         .getAuthentication()
         ).isNotNull();
 
+        assertThat(
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication()
+                        .getName()
+        ).isEqualTo("john123");
+
         verify(jwtService)
                 .extractUsername("valid-token");
 
+        verify(userDetailsService)
+                .loadUserByUsername("john123");
+
         verify(jwtService)
-                .isTokenValid("valid-token", user);
+                .isTokenValid(
+                        "valid-token",
+                        user
+                );
 
         verify(filterChain)
                 .doFilter(request, response);
@@ -185,7 +200,7 @@ class JwtAuthenticationFilterTest {
                 user
         )).thenReturn(false);
 
-        jwtAuthenticationFilter.doFilterInternal(
+        jwtAuthenticationFilter.doFilter(
                 request,
                 response,
                 filterChain
@@ -196,6 +211,18 @@ class JwtAuthenticationFilterTest {
                         .getContext()
                         .getAuthentication()
         ).isNull();
+
+        verify(jwtService)
+                .extractUsername("invalid-token");
+
+        verify(userDetailsService)
+                .loadUserByUsername("john123");
+
+        verify(jwtService)
+                .isTokenValid(
+                        "invalid-token",
+                        user
+                );
 
         verify(filterChain)
                 .doFilter(request, response);
@@ -208,7 +235,9 @@ class JwtAuthenticationFilterTest {
         SecurityContextHolder
                 .getContext()
                 .setAuthentication(
-                        mock(org.springframework.security.core.Authentication.class)
+                        mock(
+                                org.springframework.security.core.Authentication.class
+                        )
                 );
 
         request.addHeader(
@@ -219,7 +248,7 @@ class JwtAuthenticationFilterTest {
         when(jwtService.extractUsername("valid-token"))
                 .thenReturn("john123");
 
-        jwtAuthenticationFilter.doFilterInternal(
+        jwtAuthenticationFilter.doFilter(
                 request,
                 response,
                 filterChain
@@ -247,7 +276,7 @@ class JwtAuthenticationFilterTest {
         when(jwtService.extractUsername("token"))
                 .thenReturn(null);
 
-        jwtAuthenticationFilter.doFilterInternal(
+        jwtAuthenticationFilter.doFilter(
                 request,
                 response,
                 filterChain

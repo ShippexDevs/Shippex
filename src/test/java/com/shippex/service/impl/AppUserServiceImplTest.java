@@ -5,6 +5,7 @@ import com.shippex.dto.RegisterAppUserRequest;
 import com.shippex.dto.RegisterAppUserResponse;
 import com.shippex.exception.OtpException;
 import com.shippex.model.AppUser;
+import com.shippex.repository.AdminUserRepository;
 import com.shippex.repository.AppUserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,6 +27,9 @@ class AppUserServiceImplTest {
 
     @Mock
     private AppUserRepository appUserRepository;
+
+    @Mock
+    private AdminUserRepository adminUserRepository;
 
     @Mock
     private OtpService otpService;
@@ -190,8 +194,11 @@ class AppUserServiceImplTest {
     @Test
     void isUsernameAvailable_shouldReturnTrue_whenUserDoesNotExist() {
 
-        when(appUserRepository.findByUsername("john123"))
-                .thenReturn(Optional.empty());
+        when(appUserRepository.existsByUsername("john123"))
+                .thenReturn(false);
+
+        when(adminUserRepository.existsByUsername("john123"))
+                .thenReturn(false);
 
         boolean available =
                 appUserService.isUsernameAvailable("john123");
@@ -200,10 +207,13 @@ class AppUserServiceImplTest {
     }
 
     @Test
-    void isUsernameAvailable_shouldReturnFalse_whenUserExists() {
+    void isUsernameAvailable_shouldReturnFalse_whenAppUserExists() {
 
-        when(appUserRepository.findByUsername("john123"))
-                .thenReturn(Optional.of(new AppUser()));
+        when(appUserRepository.existsByUsername("john123"))
+                .thenReturn(true);
+
+        when(adminUserRepository.existsByUsername("john123"))
+                .thenReturn(false);
 
         boolean available =
                 appUserService.isUsernameAvailable("john123");

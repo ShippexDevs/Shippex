@@ -1,5 +1,7 @@
 package com.shippex.service.impl;
 
+import com.shippex.constants.AccountStatus;
+import com.shippex.constants.Role;
 import com.shippex.model.AppUser;
 import com.shippex.security.CustomUserDetails;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,7 +27,9 @@ class CustomUserDetailsTest {
         appUser.setName("John Doe");
         appUser.setUsername("john123");
         appUser.setPassword("$2a$10$hashedPassword");
-        appUser.setVerified(true);
+
+        appUser.setRole(Role.USER);
+        appUser.setAccountStatus(AccountStatus.ACTIVE);
 
         userDetails = new CustomUserDetails(appUser);
     }
@@ -74,27 +78,16 @@ class CustomUserDetailsTest {
     }
 
     @Test
-    void isEnabled_shouldReturnTrue_whenUserIsVerified() {
+    void isEnabled_shouldReturnTrue_whenAccountIsActive() {
 
         assertThat(userDetails.isEnabled())
                 .isTrue();
     }
 
     @Test
-    void isEnabled_shouldReturnFalse_whenUserIsNotVerified() {
+    void isEnabled_shouldReturnFalse_whenAccountIsDisabled() {
 
-        appUser.setVerified(false);
-
-        userDetails = new CustomUserDetails(appUser);
-
-        assertThat(userDetails.isEnabled())
-                .isFalse();
-    }
-
-    @Test
-    void isEnabled_shouldReturnFalse_whenVerifiedIsNull() {
-
-        appUser.setVerified(null);
+        appUser.setAccountStatus(AccountStatus.DISABLED);
 
         userDetails = new CustomUserDetails(appUser);
 
@@ -124,9 +117,9 @@ class CustomUserDetailsTest {
     }
 
     @Test
-    void getAppUser_shouldReturnUnderlyingUser() {
+    void getUser_shouldReturnUnderlyingUser() {
 
-        assertThat(userDetails.getAppUser())
-                .isSameAs(appUser);
+        assertThat(userDetails.getUser())
+                .isEqualTo(appUser);
     }
 }

@@ -1,6 +1,11 @@
 spring:
+  config:
+    import: optional:file:.env[.properties]
   application:
     name: Shippex
+  output:
+    ansi:
+      enabled: always
 
   data:
     mongodb:
@@ -9,6 +14,17 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 logging:
   level:
@@ -37,3 +53,9 @@ management:
       enabled: true
     redis:
       enabled: true
+bootstrap:
+  super-admin:
+    name: ${SUPER_ADMIN_NAME}
+    username: ${SUPER_ADMIN_USERNAME}
+    password: ${SUPER_ADMIN_PASSWORD}
+    email: ${SUPER_ADMIN_EMAIL}

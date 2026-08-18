@@ -1,5 +1,7 @@
 package com.shippex.service.impl;
 
+import com.shippex.constants.AccountStatus;
+import com.shippex.constants.Role;
 import com.shippex.model.AppUser;
 import com.shippex.security.CustomUserDetails;
 import com.shippex.security.JwtService;
@@ -7,15 +9,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
-//✅ JWT generation
-//✅ Username extraction
-//✅ Token validation
-//✅ Invalid user validation
-//✅ Expired token detection
-
-public class JwtServiceTest {
+class JwtServiceTest {
 
     private JwtService jwtService;
 
@@ -40,13 +36,14 @@ public class JwtServiceTest {
 
         jwtService.init();
 
-        AppUser appUser = new AppUser();
+        AppUser appUser = new AppUser(
+                "John Doe",
+                "john123",
+                "$2a$10$hashedPassword"
+        );
 
-        appUser.setId("user-1");
-        appUser.setName("John Doe");
-        appUser.setUsername("john123");
-        appUser.setPassword("$2a$10$hashedPassword");
-        appUser.setVerified(true);
+        appUser.setRole(Role.USER);
+        appUser.setAccountStatus(AccountStatus.ACTIVE);
 
         user = new CustomUserDetails(appUser);
     }
@@ -84,7 +81,8 @@ public class JwtServiceTest {
         boolean valid =
                 jwtService.isTokenValid(token, user);
 
-        assertThat(valid).isTrue();
+        assertThat(valid)
+                .isTrue();
     }
 
     @Test
@@ -93,22 +91,26 @@ public class JwtServiceTest {
         String token =
                 jwtService.generateToken(user);
 
-        AppUser anotherUser = new AppUser();
+        AppUser anotherUser = new AppUser(
+                "Jane",
+                "jane123",
+                "password"
+        );
 
-        anotherUser.setId("2");
-        anotherUser.setName("Jane");
-
-        anotherUser.setUsername("jane123");
-        anotherUser.setPassword("password");
-        anotherUser.setVerified(true);
+        anotherUser.setRole(Role.USER);
+        anotherUser.setAccountStatus(AccountStatus.ACTIVE);
 
         CustomUserDetails another =
                 new CustomUserDetails(anotherUser);
 
         boolean valid =
-                jwtService.isTokenValid(token, another);
+                jwtService.isTokenValid(
+                        token,
+                        another
+                );
 
-        assertThat(valid).isFalse();
+        assertThat(valid)
+                .isFalse();
     }
 
     @Test
@@ -137,5 +139,4 @@ public class JwtServiceTest {
         assertThat(token2)
                 .isNotBlank();
     }
-
 }
