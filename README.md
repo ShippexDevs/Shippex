@@ -186,6 +186,7 @@ Expected response
 - Global Exception Handling
 - Logging
 - Unit Tests
+- Order placement, cancellation, and order-status management
 
 ---
 
@@ -193,7 +194,6 @@ Expected response
 
 - Address Management
 - Cart APIs
-- Order APIs
 - Admin Module
 - Payment Integration
 - Notifications

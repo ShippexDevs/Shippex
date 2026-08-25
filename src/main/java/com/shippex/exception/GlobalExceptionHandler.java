@@ -47,6 +47,17 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler({ProductNotFoundException.class, OrderNotFoundException.class})
+    public ResponseEntity<ApiResponse<Void>> handleNotFoundException(RuntimeException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.failure(ex.getMessage()));
+    }
+
+    @ExceptionHandler({InsufficientStockException.class, InvalidOrderStatusException.class, IllegalArgumentException.class})
+    public ResponseEntity<ApiResponse<Void>> handleBadRequestException(RuntimeException ex) {
+        return ResponseEntity.badRequest().body(ApiResponse.failure(ex.getMessage()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGenericException(
             Exception ex) {
