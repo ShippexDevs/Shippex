@@ -10,9 +10,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 
 @Getter
@@ -31,8 +29,7 @@ public class Order {
     private BigDecimal totalAmount;
     private OrderStatus status;
     private DeliveryDestination deliveryDestination;
-    private LocalDate estimatedDeliveryDate;
-    private LocalTime estimatedDeliveryTime;
+    private LocalDateTime estimatedDeliveryDateTime;
     private String deliveryInstructions;
     private String orderInstructions;
     private String paymentMethod;

@@ -5,9 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 
 @Getter
@@ -21,8 +19,7 @@ public class OrderResponse {
     private BigDecimal totalAmount;
     private OrderStatus status;
     private DeliveryDestinationResponse deliveryDestination;
-    private LocalDate estimatedDeliveryDate;
-    private LocalTime estimatedDeliveryTime;
+    private LocalDateTime estimatedDeliveryDateTime;
     private String deliveryInstructions;
     private String orderInstructions;
     private String paymentMethod;
