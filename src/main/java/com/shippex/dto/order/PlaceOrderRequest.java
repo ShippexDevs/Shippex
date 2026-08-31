@@ -7,8 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -20,8 +19,7 @@ public class PlaceOrderRequest {
     @NotNull
     @Valid
     private DeliveryDestinationRequest deliveryDestination;
-    private LocalDate estimatedDeliveryDate;
-    private LocalTime estimatedDeliveryTime;
+    private LocalDateTime estimatedDeliveryDateTime;
     private String deliveryInstructions;
     private String orderInstructions;
     @NotBlank

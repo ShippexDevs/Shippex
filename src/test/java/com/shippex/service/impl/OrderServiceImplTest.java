@@ -22,8 +22,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -70,8 +69,7 @@ class OrderServiceImplTest {
         assertEquals("MV Example", result.getDeliveryDestination().getShipName());
         assertEquals("Mumbai Port", result.getDeliveryDestination().getPortName());
         assertEquals("1234567", result.getDeliveryDestination().getImoNumber());
-        assertEquals(LocalDate.of(2026, 8, 27), result.getEstimatedDeliveryDate());
-        assertEquals(LocalTime.of(14, 30), result.getEstimatedDeliveryTime());
+        assertEquals(LocalDateTime.of(2026, 8, 27, 14, 30), result.getEstimatedDeliveryDateTime());
         verify(productRepository).saveAll(any());
         verify(orderRepository).save(result);
     }
@@ -107,8 +105,7 @@ class OrderServiceImplTest {
 
     @Test
     void placeOrder_ShouldPersistNullOptionalDeliveryFields() {
-        request.setEstimatedDeliveryDate(null);
-        request.setEstimatedDeliveryTime(null);
+        request.setEstimatedDeliveryDateTime(null);
         request.setDeliveryInstructions(null);
         request.setOrderInstructions(null);
         request.getDeliveryDestination().setImoNumber(null);
@@ -118,8 +115,7 @@ class OrderServiceImplTest {
 
         Order result = orderService.placeOrder("user-1", request);
 
-        assertNull(result.getEstimatedDeliveryDate());
-        assertNull(result.getEstimatedDeliveryTime());
+        assertNull(result.getEstimatedDeliveryDateTime());
         assertNull(result.getDeliveryInstructions());
         assertNull(result.getOrderInstructions());
         assertNull(result.getDeliveryDestination().getImoNumber());
@@ -330,8 +326,7 @@ class OrderServiceImplTest {
         PlaceOrderRequest request = new PlaceOrderRequest();
         request.setItems(items);
         request.setDeliveryDestination(destination);
-        request.setEstimatedDeliveryDate(LocalDate.of(2026, 8, 27));
-        request.setEstimatedDeliveryTime(LocalTime.of(14, 30));
+        request.setEstimatedDeliveryDateTime(LocalDateTime.of(2026, 8, 27, 14, 30));
         request.setDeliveryInstructions("Call before arrival");
         request.setOrderInstructions("Keep items dry");
         request.setPaymentMethod("CASH_ON_DELIVERY");
