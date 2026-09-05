@@ -1,0 +1,786 @@
+{
+  "info": {
+    "_postman_id": "b066dba1-31c1-46f7-8fae-b71cf4eed4f5",
+    "name": "Shippex",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "22688496"
+  },
+  "item": [
+    {
+      "name": "WhatsApp",
+      "item": [
+        {
+          "name": "Check WA Connectivity",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"messaging_product\":\"whatsapp\",\n    \"to\":\"919330637452\",\n    \"type\":\"text\",\n    \"text\":{\n        \"body\":\"Hello\"\n    }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/whatsapp/send-test",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "whatsapp",
+                "send-test"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "AppUser Register",
+      "item": [
+        {
+          "name": "Register App User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Successful POST request\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sarah Williams\",\n  \"username\": \"sample\",\n  \"password\": \"sample\",\n  \"email\": \"sarah.williams@example.com\",\n  \"whatsappContactNo\": \"+919123883636\",\n  \"designation\": \"CHIEF_ENGINEER\",\n  \"shipName\": \"MV Atlantic Star\",\n  \"shipIMONumber\": \"9456723\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/public/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "public",
+                "register"
+              ]
+            },
+            "description": "This is a POST request, submitting data to an API via the request body. This request submits JSON data, and the data is reflected in the response.\n\nA successful POST request typically returns a `200 OK` or `201 Created` response code."
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Otp",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+919123883636\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/public/generateOtp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "public",
+                "generateOtp"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Otp",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+919123883636\",\n  \"otp\": \"306602\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/public/verifyOtp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "public",
+                "verifyOtp"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Check Username",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/public/checkUsername/sarahw2",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "public",
+                "checkUsername",
+                "sarahw2"
+              ],
+              "query": [
+                {
+                  "key": "username",
+                  "value": "rajeshk",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "This is a GET request and it is used to \"get\" data from an endpoint. There is no request body for a GET request, but you can use query parameters to help specify the resource you want data on (e.g., in this request, we have `id=1`).\n\nA successful GET response will have a `200 OK` status, and should include some kind of response body - for example, HTML web content or JSON data."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Product",
+      "item": [
+        {
+          "name": "Add Product in bulk",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_appuser}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "[\r\n  {\r\n    \"name\": \"Cordless Clipper Wireless for Men\",\r\n    \"brand\": \"Kemei\",\r\n    \"sku\": \"E-001\",\r\n    \"description\": \"Rechargeable cordless beard and hair trimmer with USB charging and four combs for versatile grooming.\",\r\n    \"category\": \"Electronic\",\r\n    \"categorySlug\": \"electronics\",\r\n    \"images\": [\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/kemei_hair_clipper.jpg\"\r\n    ],\r\n    \"currency\": \"USD\",\r\n    \"currentPrice\": 10.00,\r\n    \"originalPrice\": 14.99,\r\n    \"unit\": \"1pc\",\r\n    \"stock\": 100,\r\n    \"featured\": true,\r\n    \"active\": true,\r\n    \"deliveryTime\": \"24hours\",\r\n    \"tags\": [\r\n      \"kemei\",\r\n      \"trimmer\",\r\n      \"hair-clipper\",\r\n      \"beard-trimmer\",\r\n      \"cordless\",\r\n      \"grooming\"\r\n    ]\r\n  },\r\n  {\r\n    \"name\": \"Trimmer 9-in-One Grooming Kit- Face, Hair, Body | Ear/Nose attachment\",\r\n    \"brand\": \"Philips\",\r\n    \"sku\": \"E-002\",\r\n    \"description\": \"All-in-one 9-in-1 grooming kit for face, hair and body with ear and nose attachments, 60-minute runtime and sensitive-skin protection.\",\r\n    \"category\": \"Electronic\",\r\n    \"categorySlug\": \"electronics\",\r\n    \"images\": [\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/philips_trimmer_9_in_1_1.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/philips_trimmer_9_in_1_2.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/philips_trimmer_9_in_1_3.jpg\"\r\n    ],\r\n    \"currency\": \"USD\",\r\n    \"currentPrice\": 20.00,\r\n    \"originalPrice\": 29.99,\r\n    \"unit\": \"1pc\",\r\n    \"stock\": 100,\r\n    \"featured\": true,\r\n    \"active\": true,\r\n    \"deliveryTime\": \"24hours\",\r\n    \"tags\": [\r\n      \"philips\",\r\n      \"trimmer\",\r\n      \"grooming-kit\",\r\n      \"9-in-1\",\r\n      \"beard-trimmer\",\r\n      \"body-grooming\"\r\n    ]\r\n  },\r\n  {\r\n    \"name\": \"Professional Hair Beard Trimmer\",\r\n    \"brand\": \"Vintage\",\r\n    \"sku\": \"E-003\",\r\n    \"description\": \"Professional electric hair and beard trimmer with adjustable blade for versatile men's grooming.\",\r\n    \"category\": \"Electronic\",\r\n    \"categorySlug\": \"electronics\",\r\n    \"images\": [\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/vintage_trimmer_1.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/vintage_trimmer_2.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/vintage_trimmer_3.jpg\"\r\n    ],\r\n    \"currency\": \"USD\",\r\n    \"currentPrice\": 5.00,\r\n    \"originalPrice\": 7.99,\r\n    \"unit\": \"1pc\",\r\n    \"stock\": 100,\r\n    \"featured\": true,\r\n    \"active\": true,\r\n    \"deliveryTime\": \"24hours\",\r\n    \"tags\": [\r\n      \"vintage\",\r\n      \"trimmer\",\r\n      \"beard-trimmer\",\r\n      \"hair-trimmer\",\r\n      \"electric-shaver\",\r\n      \"grooming\"\r\n    ]\r\n  },\r\n  {\r\n    \"name\": \"Trimmer 13-in-One Grooming Kit- Face, Hair, Body | Ear/Nose attachment\",\r\n    \"brand\": \"Philips\",\r\n    \"sku\": \"E-004\",\r\n    \"description\": \"Ultimate 13-in-1 full-body grooming kit with BeardSense technology, 120-minute runtime and IPX7 water resistance.\",\r\n    \"category\": \"Electronic\",\r\n    \"categorySlug\": \"electronics\",\r\n    \"images\": [\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/philips_trimmer_13_in_1_1.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/philips_trimmer_13_in_1_2.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/philips_trimmer_13_in_1_3.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/philips_trimmer_13_in_1_4.jpg\"\r\n    ],\r\n    \"currency\": \"USD\",\r\n    \"currentPrice\": 45.00,\r\n    \"originalPrice\": 59.99,\r\n    \"unit\": \"1pc\",\r\n    \"stock\": 100,\r\n    \"featured\": true,\r\n    \"active\": true,\r\n    \"deliveryTime\": \"24hours\",\r\n    \"tags\": [\r\n      \"philips\",\r\n      \"trimmer\",\r\n      \"grooming-kit\",\r\n      \"13-in-1\",\r\n      \"beard-trimmer\",\r\n      \"body-grooming\",\r\n      \"waterproof\"\r\n    ]\r\n  },\r\n  {\r\n    \"name\": \"boAt Airdopes 311 Pro TWS Earbuds W/ Mic, 50H Playback, Dual Mic ENx, IPX4,v5.3(Active Black)\",\r\n    \"brand\": \"boAt\",\r\n    \"sku\": \"E-005\",\r\n    \"description\": \"TWS earbuds with 50-hour playback, 10mm dual drivers, dual-mic ENx technology, ASAP fast charging and IPX4 protection.\",\r\n    \"category\": \"Electronic\",\r\n    \"categorySlug\": \"electronics\",\r\n    \"images\": [\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/boat_airdopes_311_earbuds_1.png\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/boat_airdopes_311_earbuds_2.png\"\r\n    ],\r\n    \"currency\": \"USD\",\r\n    \"currentPrice\": 15.00,\r\n    \"originalPrice\": 19.99,\r\n    \"unit\": \"1pc\",\r\n    \"stock\": 100,\r\n    \"featured\": true,\r\n    \"active\": true,\r\n    \"deliveryTime\": \"24hours\",\r\n    \"tags\": [\r\n      \"boat\",\r\n      \"airdopes\",\r\n      \"tws\",\r\n      \"earbuds\",\r\n      \"wireless\",\r\n      \"bluetooth\",\r\n      \"50-hours-playback\"\r\n    ]\r\n  },\r\n  {\r\n    \"name\": \"Aero TWS Earbuds\",\r\n    \"brand\": \"Fire-Boltt\",\r\n    \"sku\": \"E-006\",\r\n    \"description\": \"Wireless TWS earbuds with Bluetooth 5.4, custom EQ, 50-hour playtime, fast charging, low latency and IPX4 protection.\",\r\n    \"category\": \"Electronic\",\r\n    \"categorySlug\": \"electronics\",\r\n    \"images\": [\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/fire_boltt_aero_tws_1.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/fire_boltt_aero_tws_2.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/fire_boltt_aero_tws_3.jpg\"\r\n    ],\r\n    \"currency\": \"USD\",\r\n    \"currentPrice\": 15.00,\r\n    \"originalPrice\": 19.99,\r\n    \"unit\": \"1pc\",\r\n    \"stock\": 100,\r\n    \"featured\": true,\r\n    \"active\": true,\r\n    \"deliveryTime\": \"24hours\",\r\n    \"tags\": [\r\n      \"fire-boltt\",\r\n      \"aero\",\r\n      \"tws\",\r\n      \"earbuds\",\r\n      \"wireless\",\r\n      \"bluetooth\",\r\n      \"gaming\"\r\n    ]\r\n  },\r\n  {\r\n    \"name\": \"Bassbuds Astra in-Ear TWS Earbuds\",\r\n    \"brand\": \"pTron\",\r\n    \"sku\": \"E-007\",\r\n    \"description\": \"In-ear TWS earbuds with stereo sound, 34-hour playtime, custom EQ, touch controls, voice assistant and IPX4 protection.\",\r\n    \"category\": \"Electronic\",\r\n    \"categorySlug\": \"electronics\",\r\n    \"images\": [\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/pTron_bassbuds_astra_1.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/pTron_bassbuds_astra_2.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/pTron_bassbuds_astra_3.jpg\"\r\n    ],\r\n    \"currency\": \"USD\",\r\n    \"currentPrice\": 15.00,\r\n    \"originalPrice\": 19.99,\r\n    \"unit\": \"1pc\",\r\n    \"stock\": 100,\r\n    \"featured\": true,\r\n    \"active\": true,\r\n    \"deliveryTime\": \"24hours\",\r\n    \"tags\": [\r\n      \"ptron\",\r\n      \"bassbuds\",\r\n      \"astra\",\r\n      \"tws\",\r\n      \"earbuds\",\r\n      \"wireless\",\r\n      \"stereo\"\r\n    ]\r\n  },\r\n  {\r\n    \"name\": \"Nord Buds 3r TWS Earbuds\",\r\n    \"brand\": \"OnePlus\",\r\n    \"sku\": \"E-008\",\r\n    \"description\": \"TWS earbuds with up to 54 hours playback, 12.4mm drivers, 3D spatial audio, AI translation, dual-device connectivity and low latency.\",\r\n    \"category\": \"Electronic\",\r\n    \"categorySlug\": \"electronics\",\r\n    \"images\": [\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/oneplus_nord_buds_3r_1.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/oneplus_nord_buds_3r_2.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/oneplus_nord_buds_3r_3.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/oneplus_nord_buds_3r_4.jpg\"\r\n    ],\r\n    \"currency\": \"USD\",\r\n    \"currentPrice\": 25.00,\r\n    \"originalPrice\": 34.99,\r\n    \"unit\": \"1pc\",\r\n    \"stock\": 100,\r\n    \"featured\": true,\r\n    \"active\": true,\r\n    \"deliveryTime\": \"24hours\",\r\n    \"tags\": [\r\n      \"oneplus\",\r\n      \"nord\",\r\n      \"tws\",\r\n      \"earbuds\",\r\n      \"wireless\",\r\n      \"spatial-audio\",\r\n      \"low-latency\"\r\n    ]\r\n  },\r\n  {\r\n    \"name\": \"Minor Iv Wireless in Ear Earbuds\",\r\n    \"brand\": \"Marshall\",\r\n    \"sku\": \"E-009\",\r\n    \"description\": \"Wireless in-ear earbuds with Marshall signature sound, 30+ hours playtime, touch controls, multipoint Bluetooth and app support.\",\r\n    \"category\": \"Electronic\",\r\n    \"categorySlug\": \"electronics\",\r\n    \"images\": [\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/marshall_minor_tws_1.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/marshall_minor_tws_2.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/marshall_minor_tws_3.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/marshall_minor_tws_4.jpg\"\r\n    ],\r\n    \"currency\": \"USD\",\r\n    \"currentPrice\": 120.00,\r\n    \"originalPrice\": 149.99,\r\n    \"unit\": \"1pc\",\r\n    \"stock\": 100,\r\n    \"featured\": true,\r\n    \"active\": true,\r\n    \"deliveryTime\": \"24hours\",\r\n    \"tags\": [\r\n      \"marshall\",\r\n      \"minor\",\r\n      \"tws\",\r\n      \"earbuds\",\r\n      \"wireless\",\r\n      \"bluetooth\",\r\n      \"30-hours-playback\"\r\n    ]\r\n  },\r\n  {\r\n    \"name\": \"AirPods 4 Wireless Earbuds\",\r\n    \"brand\": \"Apple\",\r\n    \"sku\": \"E-010\",\r\n    \"description\": \"Wireless earbuds with personalised spatial audio, sweat and water resistance, H2 chip, USB-C charging case and up to 30 hours of battery life.\",\r\n    \"category\": \"Electronic\",\r\n    \"categorySlug\": \"electronics\",\r\n    \"images\": [\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/apple_airpods_4_1.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/apple_airpods_4_2.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/apple_airpods_4_3.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/apple_airpods_4_4.jpg\"\r\n    ],\r\n    \"currency\": \"USD\",\r\n    \"currentPrice\": 140.00,\r\n    \"originalPrice\": 199.99,\r\n    \"unit\": \"1pc\",\r\n    \"stock\": 100,\r\n    \"featured\": true,\r\n    \"active\": true,\r\n    \"deliveryTime\": \"24hours\",\r\n    \"tags\": [\r\n      \"apple\",\r\n      \"airpods\",\r\n      \"airpods-4\",\r\n      \"earbuds\",\r\n      \"wireless\",\r\n      \"spatial-audio\",\r\n      \"bluetooth\"\r\n    ]\r\n  },\r\n  {\r\n    \"name\": \"Major V Wireless On Ear Headphones, Black\",\r\n    \"brand\": \"Marshall\",\r\n    \"sku\": \"E-011\",\r\n    \"description\": \"Wireless on-ear headphones with Marshall signature sound, 100+ hours playtime, foldable design, customisable M-button and wireless charging.\",\r\n    \"category\": \"Electronic\",\r\n    \"categorySlug\": \"electronics\",\r\n    \"images\": [\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/marshall_major_v_1.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/marshall_major_v_2.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/marshall_major_v_3.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/marshall_major_v_4.jpg\"\r\n    ],\r\n    \"currency\": \"USD\",\r\n    \"currentPrice\": 140.00,\r\n    \"originalPrice\": 199.99,\r\n    \"unit\": \"1pc\",\r\n    \"stock\": 100,\r\n    \"featured\": true,\r\n    \"active\": true,\r\n    \"deliveryTime\": \"24hours\",\r\n    \"tags\": [\r\n      \"marshall\",\r\n      \"major-v\",\r\n      \"headphones\",\r\n      \"wireless\",\r\n      \"on-ear\",\r\n      \"bluetooth\",\r\n      \"wireless-charging\"\r\n    ]\r\n  },\r\n  {\r\n    \"name\": \"Buds T200 True Wireless Earbuds with Hi-Res Audio\",\r\n    \"brand\": \"realme\",\r\n    \"sku\": \"E-012\",\r\n    \"description\": \"True wireless earbuds with Hi-Res Audio, 12.4mm dynamic bass drivers, 32dB ANC, quad mic, 50-hour playback and IP55 protection.\",\r\n    \"category\": \"Electronic\",\r\n    \"categorySlug\": \"electronics\",\r\n    \"images\": [\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/realme_buds_t200_1.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/realme_buds_t200_2.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/realme_buds_t200_3.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/realme_buds_t200_4.jpg\"\r\n    ],\r\n    \"currency\": \"USD\",\r\n    \"currentPrice\": 25.00,\r\n    \"originalPrice\": 29.99,\r\n    \"unit\": \"1pc\",\r\n    \"stock\": 100,\r\n    \"featured\": true,\r\n    \"active\": true,\r\n    \"deliveryTime\": \"24hours\",\r\n    \"tags\": [\r\n      \"realme\",\r\n      \"buds\",\r\n      \"tws\",\r\n      \"earbuds\",\r\n      \"hi-res-audio\",\r\n      \"anc\",\r\n      \"bluetooth\"\r\n    ]\r\n  },\r\n  {\r\n    \"name\": \"Rockerz 371 Bluetooth Headphones\",\r\n    \"brand\": \"boAt\",\r\n    \"sku\": \"E-013\",\r\n    \"description\": \"Bluetooth headphones with 40mm drivers, 50-hour battery, 60ms low latency, ENx technology, foldable cups and voice assistant.\",\r\n    \"category\": \"Electronic\",\r\n    \"categorySlug\": \"electronics\",\r\n    \"images\": [\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/boAt_rockerz_371_1.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/boAt_rockerz_371_2.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/boAt_rockerz_371_3.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/boAt_rockerz_371_4.jpg\"\r\n    ],\r\n    \"currency\": \"USD\",\r\n    \"currentPrice\": 20.00,\r\n    \"originalPrice\": 29.99,\r\n    \"unit\": \"1pc\",\r\n    \"stock\": 100,\r\n    \"featured\": true,\r\n    \"active\": true,\r\n    \"deliveryTime\": \"24hours\",\r\n    \"tags\": [\r\n      \"boat\",\r\n      \"rockerz\",\r\n      \"headphones\",\r\n      \"wireless\",\r\n      \"bluetooth\",\r\n      \"low-latency\",\r\n      \"foldable\"\r\n    ]\r\n  },\r\n  {\r\n    \"name\": \"Rockerz 650 Pro Bluetooth Headphones\",\r\n    \"brand\": \"boAt\",\r\n    \"sku\": \"E-014\",\r\n    \"description\": \"Over-ear Bluetooth headphones with touch controls, Dolby Audio, 80-hour battery, dual-mic ENx, fast charging, app support and dual pairing.\",\r\n    \"category\": \"Electronic\",\r\n    \"categorySlug\": \"electronics\",\r\n    \"images\": [\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/boAt_rockerz_650_1.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/boAt_rockerz_650_2.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/boAt_rockerz_650_3.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/boAt_rockerz_650_4.jpg\"\r\n    ],\r\n    \"currency\": \"USD\",\r\n    \"currentPrice\": 35.00,\r\n    \"originalPrice\": 49.99,\r\n    \"unit\": \"1pc\",\r\n    \"stock\": 100,\r\n    \"featured\": true,\r\n    \"active\": true,\r\n    \"deliveryTime\": \"24hours\",\r\n    \"tags\": [\r\n      \"boat\",\r\n      \"rockerz\",\r\n      \"headphones\",\r\n      \"wireless\",\r\n      \"bluetooth\",\r\n      \"dolby-audio\",\r\n      \"over-ear\"\r\n    ]\r\n  },\r\n  {\r\n    \"name\": \"Ultra Dual Drive Go Type-C 64GB, OTG, Upto 300MB/s, Pendrive, Black, 5Y Warranty (SDDDC3-064G-I46PD)\",\r\n    \"brand\": \"SANDISK\",\r\n    \"sku\": \"E-015\",\r\n    \"description\": \"2-in-1 USB Type-C and Type-A flash drive with USB 3.2 Gen 1 speeds up to 300MB/s, OTG support and 5-year warranty.\",\r\n    \"category\": \"Electronic\",\r\n    \"categorySlug\": \"electronics\",\r\n    \"images\": [\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/sandisk_otg_type_c_1.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/sandisk_otg_type_c_2.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/sandisk_otg_type_c_3.jpg\"\r\n    ],\r\n    \"currency\": \"USD\",\r\n    \"currentPrice\": 16.00,\r\n    \"originalPrice\": 24.99,\r\n    \"unit\": \"1pc\",\r\n    \"stock\": 100,\r\n    \"featured\": true,\r\n    \"active\": true,\r\n    \"deliveryTime\": \"24hours\",\r\n    \"tags\": [\r\n      \"sandisk\",\r\n      \"pendrive\",\r\n      \"usb-drive\",\r\n      \"type-c\",\r\n      \"otg\",\r\n      \"64gb\",\r\n      \"usb-3.2\"\r\n    ]\r\n  },\r\n  {\r\n    \"name\": \"Ultra Dual Drive Go Type-C 128GB, OTG, Upto 300MB/s, Pendrive, Black, 5Y Warranty (SDDDC3-064G-I46PD)\",\r\n    \"brand\": \"SANDISK\",\r\n    \"sku\": \"E-016\",\r\n    \"description\": \"2-in-1 USB Type-C and Type-A flash drive with USB 3.2 Gen 1 speeds up to 300MB/s, OTG support and 5-year warranty.\",\r\n    \"category\": \"Electronic\",\r\n    \"categorySlug\": \"electronics\",\r\n    \"images\": [\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/sandisk_otg_type_c_1.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/sandisk_otg_type_c_2.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/sandisk_otg_type_c_3.jpg\"\r\n    ],\r\n    \"currency\": \"USD\",\r\n    \"currentPrice\": 25.00,\r\n    \"originalPrice\": 31.99,\r\n    \"unit\": \"1pc\",\r\n    \"stock\": 100,\r\n    \"featured\": true,\r\n    \"active\": true,\r\n    \"deliveryTime\": \"24hours\",\r\n    \"tags\": [\r\n      \"sandisk\",\r\n      \"pendrive\",\r\n      \"usb-drive\",\r\n      \"type-c\",\r\n      \"otg\",\r\n      \"128gb\",\r\n      \"usb-3.2\"\r\n    ]\r\n  },\r\n  {\r\n    \"name\": \"Ultra Dual Drive Go Type-C 256GB, OTG, Upto 300MB/s, Pendrive, Black, 5Y Warranty (SDDDC3-064G-I46PD)\",\r\n    \"brand\": \"SANDISK\",\r\n    \"sku\": \"E-017\",\r\n    \"description\": \"2-in-1 USB Type-C and Type-A flash drive with USB 3.2 Gen 1 speeds up to 300MB/s, OTG support and 5-year warranty.\",\r\n    \"category\": \"Electronic\",\r\n    \"categorySlug\": \"electronics\",\r\n    \"images\": [\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/sandisk_otg_type_c_1.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/sandisk_otg_type_c_2.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/sandisk_otg_type_c_3.jpg\"\r\n    ],\r\n    \"currency\": \"USD\",\r\n    \"currentPrice\": 40.00,\r\n    \"originalPrice\": 44.99,\r\n    \"unit\": \"1pc\",\r\n    \"stock\": 100,\r\n    \"featured\": true,\r\n    \"active\": true,\r\n    \"deliveryTime\": \"24hours\",\r\n    \"tags\": [\r\n      \"sandisk\",\r\n      \"pendrive\",\r\n      \"usb-drive\",\r\n      \"type-c\",\r\n      \"otg\",\r\n      \"256gb\",\r\n      \"usb-3.2\"\r\n    ]\r\n  },\r\n  {\r\n    \"name\": \"Adapto 45 GaN 22.5W Fast Charger, USB & Type-C Dual Port Wall Adapter, PD 3.0 Fast Charging Adaptor for iPhone, Android & Type C Devices (Black)\",\r\n    \"brand\": \"Portronics\",\r\n    \"sku\": \"E-018\",\r\n    \"description\": \"Compact 22.5W GaN fast charger with USB-A and USB-C dual ports, PD 3.0 support, simultaneous charging and multiple safety features.\",\r\n    \"category\": \"Electronic\",\r\n    \"categorySlug\": \"electronics\",\r\n    \"images\": [\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/portronics_adapto_45_1.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/portronics_adapto_45_2.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/portronics_adapto_45_3.jpg\"\r\n    ],\r\n    \"currency\": \"USD\",\r\n    \"currentPrice\": 8.00,\r\n    \"originalPrice\": 14.99,\r\n    \"unit\": \"1pc\",\r\n    \"stock\": 100,\r\n    \"featured\": true,\r\n    \"active\": true,\r\n    \"deliveryTime\": \"24hours\",\r\n    \"tags\": [\r\n      \"portronics\",\r\n      \"charger\",\r\n      \"fast-charger\",\r\n      \"gan\",\r\n      \"usb-c\",\r\n      \"pd-3.0\",\r\n      \"22.5w\"\r\n    ]\r\n  },\r\n  {\r\n    \"name\": \"Konnect L POR-1403 Fast Charging 3A Type-C Cable 1.2 Meter with Charge & Sync Function for All Type-C Devices (White)\",\r\n    \"brand\": \"Portronics\",\r\n    \"sku\": \"E-019\",\r\n    \"description\": \"Durable 1.2-meter Type-C charging and data-sync cable with 3A fast charging, TPE and nylon construction and broad device compatibility.\",\r\n    \"category\": \"Electronic\",\r\n    \"categorySlug\": \"electronics\",\r\n    \"images\": [\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/portronics_konnect_l_cable_1.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/portronics_konnect_l_cable_2.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/portronics_konnect_l_cable_3.jpg\"\r\n    ],\r\n    \"currency\": \"USD\",\r\n    \"currentPrice\": 4.00,\r\n    \"originalPrice\": 5.99,\r\n    \"unit\": \"1pc\",\r\n    \"stock\": 100,\r\n    \"featured\": true,\r\n    \"active\": true,\r\n    \"deliveryTime\": \"24hours\",\r\n    \"tags\": [\r\n      \"portronics\",\r\n      \"type-c\",\r\n      \"usb-c\",\r\n      \"charging-cable\",\r\n      \"data-sync\",\r\n      \"fast-charging\",\r\n      \"3a\"\r\n    ]\r\n  },\r\n  {\r\n    \"name\": \"Magsafe Wireless 10000Mah Fast Charging Power Bank, Strong Magnet, Micro USB Input, 22.5W Output For Iphone 12 Above, Android & Other Qi Enabled Devices + Magnetic Ring (Aerosync Snap, Purple)\",\r\n    \"brand\": \"Ambrane\",\r\n    \"sku\": \"E-020\",\r\n    \"description\": \"10000mAh magnetic wireless power bank with 22W Type-C, 22.5W USB-A and 15W MagSafe output plus PD 3.0, QC 3.0, VOOC and PPS support.\",\r\n    \"category\": \"Electronic\",\r\n    \"categorySlug\": \"electronics\",\r\n    \"images\": [\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/ambrane_magsafe_power_bank_10000_1.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/ambrane_magsafe_power_bank_10000_2.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/ambrane_magsafe_power_bank_10000_3.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/ambrane_magsafe_power_bank_10000_4.jpg\"\r\n    ],\r\n    \"currency\": \"USD\",\r\n    \"currentPrice\": 20.00,\r\n    \"originalPrice\": 24.99,\r\n    \"unit\": \"1pc\",\r\n    \"stock\": 100,\r\n    \"featured\": true,\r\n    \"active\": true,\r\n    \"deliveryTime\": \"24hours\",\r\n    \"tags\": [\r\n      \"ambrane\",\r\n      \"power-bank\",\r\n      \"magsafe\",\r\n      \"wireless-charging\",\r\n      \"10000mah\",\r\n      \"fast-charging\",\r\n      \"22.5w\"\r\n    ]\r\n  },\r\n  {\r\n    \"name\": \"Power Bank 4i 20000mAh 33W Super Fast Charging PD |Smart 12 Layer Protection|Type C Input & Output|Triple Output Ports|Supports Android,Apple, Tablets, Earbuds,Watch(MI Powerbank),Black\",\r\n    \"brand\": \"Xiaomi\",\r\n    \"sku\": \"E-021\",\r\n    \"description\": \"20000mAh power bank with 33W two-way fast charging, PD 3.0, Type-C input and output, triple ports and 12-layer safety protection.\",\r\n    \"category\": \"Electronic\",\r\n    \"categorySlug\": \"electronics\",\r\n    \"images\": [\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/xiaomi_power_bank_20000_1.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/xiaomi_power_bank_20000_2.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/xiaomi_power_bank_20000_3.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/xiaomi_power_bank_20000_4.jpg\"\r\n    ],\r\n    \"currency\": \"USD\",\r\n    \"currentPrice\": 25.00,\r\n    \"originalPrice\": 29.99,\r\n    \"unit\": \"1pc\",\r\n    \"stock\": 100,\r\n    \"featured\": true,\r\n    \"active\": true,\r\n    \"deliveryTime\": \"24hours\",\r\n    \"tags\": [\r\n      \"xiaomi\",\r\n      \"power-bank\",\r\n      \"20000mah\",\r\n      \"fast-charging\",\r\n      \"33w\",\r\n      \"pd-3.0\",\r\n      \"type-c\"\r\n    ]\r\n  },\r\n  {\r\n    \"name\": \"20000 Lumens High Power Torch Light, Torch Rechargeable with 4 Light Modes, Adjustable Focus Flashlight, IP45 Water-Resistant, Black\",\r\n    \"brand\": \"UN1QUE\",\r\n    \"sku\": \"E-022\",\r\n    \"description\": \"Rechargeable 20000-lumen flashlight with four lighting modes, adjustable focus, 3000mAh battery, Type-C charging and IP45 water resistance.\",\r\n    \"category\": \"Electronic\",\r\n    \"categorySlug\": \"electronics\",\r\n    \"images\": [\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/unique_high_powered_flashlight_1.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/unique_high_powered_flashlight_2.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/unique_high_powered_flashlight_3.jpg\"\r\n    ],\r\n    \"currency\": \"USD\",\r\n    \"currentPrice\": 15.00,\r\n    \"originalPrice\": 24.99,\r\n    \"unit\": \"1pc\",\r\n    \"stock\": 100,\r\n    \"featured\": true,\r\n    \"active\": true,\r\n    \"deliveryTime\": \"24hours\",\r\n    \"tags\": [\r\n      \"un1que\",\r\n      \"flashlight\",\r\n      \"torch\",\r\n      \"rechargeable\",\r\n      \"20000-lumens\",\r\n      \"led\",\r\n      \"outdoor\"\r\n    ]\r\n  },\r\n  {\r\n    \"name\": \"Rechargeable LED Torch Light 5W with Zoom Focus, USB Charging High Power Flashlight, Waterproof Aluminum Metal Body, Long Range Torch for Camping, Emergency, Hiking, Home & Power Backup\",\r\n    \"brand\": \"UN1QUE\",\r\n    \"sku\": \"E-023\",\r\n    \"description\": \"Rechargeable 5W LED flashlight with adjustable zoom focus, USB charging, durable waterproof metal body and long-range illumination for outdoor and emergency use.\",\r\n    \"category\": \"Electronic\",\r\n    \"categorySlug\": \"electronics\",\r\n    \"images\": [\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/unique_pocket_size_powered_flashlight_1.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/unique_pocket_size_powered_flashlight_2.jpg\",\r\n      \"https://shippex-images.s3.ap-south-1.amazonaws.com/electronics/unique_pocket_size_powered_flashlight_3.jpg\"\r\n    ],\r\n    \"currency\": \"USD\",\r\n    \"currentPrice\": 4.00,\r\n    \"originalPrice\": 5.99,\r\n    \"unit\": \"1pc\",\r\n    \"stock\": 100,\r\n    \"featured\": true,\r\n    \"active\": true,\r\n    \"deliveryTime\": \"24hours\",\r\n    \"tags\": [\r\n      \"un1que\",\r\n      \"flashlight\",\r\n      \"torch\",\r\n      \"led\",\r\n      \"rechargeable\",\r\n      \"zoom-focus\",\r\n      \"camping\"\r\n    ]\r\n  }\r\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/bulk",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products",
+                "bulk"
+              ],
+              "query": [
+                {
+                  "key": "username",
+                  "value": "rajeshk",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product By Id",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_appuser}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/6a691e0ad5bc28feffe21fe5",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products",
+                "6a691e0ad5bc28feffe21fe5"
+              ],
+              "query": [
+                {
+                  "key": "username",
+                  "value": "rajeshk",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Category Product",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{vault:supabase_service_role_api_key_11wt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/category/chocolates",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "products",
+                "category",
+                "chocolates"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Order",
+      "item": [
+        {
+          "name": "Place Order",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{vault:supabase_service_role_api_key_11wt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"productId\": \"6a7ccc12aa378fbae73edf31\", \"quantity\": 1 },\n    { \"productId\": \"6a7acbbd24e5349b279a5e1d\", \"quantity\": 2 }\n  ],\n  \"deliveryDestination\": {\n    \"shipName\": \"America Great\",\n    \"imoNumber\": \"1234567\",\n    \"berthNumber\": \"NSD1\",\n    \"portName\": \"Mumbai Port\"\n  },\n  \"estimatedDeliveryDateTime\": \"2026-09-10T14:30:00\",\n  \"deliveryInstructions\": \"Call before arrival\",\n  \"orderInstructions\": \"Keep items dry\",\n  \"paymentMethod\": \"CASH_ON_DELIVERY\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/orders",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Orders",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{vault:supabase_service_role_api_key_11wt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/orders/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Order",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{vault:supabase_service_role_api_key_11wt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/orders/6a933fd761dbe2abc3090225/cancel",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "orders",
+                "6a933fd761dbe2abc3090225",
+                "cancel"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "widgets",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{vault:admin_api_Key}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/dashboard/widgets",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "dashboard",
+                "widgets"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "overviewChart",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{vault:admin_api_Key}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/dashboard/overviewChart?days=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "dashboard",
+                "overviewChart"
+              ],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "orders",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{vault:admin_api_Key}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/dashboard/orders?days=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "dashboard",
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "recent activity",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{vault:admin_api_Key}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/dashboard/recentActivity?days=130",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "dashboard",
+                "recentActivity"
+              ],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "130"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{admin_api_Key}}",
+            "type": "string"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Admin Login",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"zunaid\",\n  \"password\": \"password\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Update data",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Successful PUT request\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+              "});",
+              ""
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n\t\"name\": \"Add your name in the body\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/info?id=1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "info"
+          ],
+          "query": [
+            {
+              "key": "id",
+              "value": "1"
+            }
+          ]
+        },
+        "description": "This is a PUT request and it is used to overwrite an existing piece of data. For instance, after you create an entity with a POST request, you may want to modify that later. You can do that using a PUT request. You typically identify the entity being updated by including an identifier in the URL (eg. `id=1`).\n\nA successful PUT request typically returns a `200 OK`, `201 Created`, or `204 No Content` response code."
+      },
+      "response": []
+    },
+    {
+      "name": "Delete data",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Successful DELETE request\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 202, 204]);",
+              "});",
+              ""
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/info?id=1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "info"
+          ],
+          "query": [
+            {
+              "key": "id",
+              "value": "1"
+            }
+          ]
+        },
+        "description": "This is a DELETE request, and it is used to delete data that was previously created via a POST request. You typically identify the entity being updated by including an identifier in the URL (eg. `id=1`).\n\nA successful DELETE request typically returns a `200 OK`, `202 Accepted`, or `204 No Content` response code."
+      },
+      "response": []
+    },
+    {
+      "name": "Login User",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"nelson\",\n  \"password\": \"password\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/public/login",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "public",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "value": "1"
+    },
+    {
+      "key": "base_url",
+      "value": "https://template.postman-echo.com"
+    },
+    {
+      "key": "access_token",
+      "secret": true
+    }
+  ]
+}
