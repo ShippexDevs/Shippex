@@ -26,6 +26,10 @@ spring:
           starttls:
             enable: true
 
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
 logging:
   level:
     root: ${LOG_LEVEL:INFO}
