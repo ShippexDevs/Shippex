@@ -28,15 +28,28 @@ public class AdminOrderController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<OrderResponse>>> getAllOrders() {
         log.debug("Admin request received to fetch all orders");
-        List<OrderResponse> orders = orderService.getAllOrders().stream().map(OrderMapper::toResponse).toList();
+        List<OrderResponse> orders = orderService.getAllOrdersForAdmin();
         return ResponseEntity.ok(ApiResponse.success("Orders retrieved successfully.", orders));
     }
 
     @PatchMapping("/{id}/status")
     public ResponseEntity<ApiResponse<OrderResponse>> updateStatus(
-            @PathVariable String id, @Valid @RequestBody UpdateOrderStatusRequest request) {
-        log.info("Admin order-status update request received for orderId={}, targetStatus={}", id, request.getStatus());
-        return ResponseEntity.ok(ApiResponse.success("Order status updated successfully.",
-                OrderMapper.toResponse(orderService.updateStatus(id, request))));
+            @PathVariable String id,
+            @Valid @RequestBody UpdateOrderStatusRequest request) {
+
+        log.info(
+                "Admin order-status update request received for orderId={}, targetStatus={}",
+                id,
+                request.getStatus()
+        );
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        "Order status updated successfully.",
+                        OrderMapper.toResponse(
+                                orderService.updateStatus(id, request)
+                        )
+                )
+        );
     }
 }
