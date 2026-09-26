@@ -1,17 +1,16 @@
 package com.shippex.service.impl;
 
 import com.shippex.dto.order.OrderItemRequest;
+import com.shippex.dto.order.OrderResponse;
 import com.shippex.dto.order.PlaceOrderRequest;
 import com.shippex.dto.order.UpdateOrderStatusRequest;
 import com.shippex.exception.InsufficientStockException;
 import com.shippex.exception.InvalidOrderStatusException;
 import com.shippex.exception.OrderNotFoundException;
 import com.shippex.exception.ProductNotFoundException;
-import com.shippex.model.Order;
-import com.shippex.model.DeliveryDestination;
-import com.shippex.model.OrderItem;
-import com.shippex.model.OrderStatus;
-import com.shippex.model.Product;
+import com.shippex.mapper.OrderMapper;
+import com.shippex.model.*;
+import com.shippex.repository.AppUserRepository;
 import com.shippex.repository.OrderRepository;
 import com.shippex.repository.ProductRepository;
 import com.shippex.service.OrderService;
@@ -22,7 +21,10 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +32,7 @@ import java.util.UUID;
 public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
+    private final AppUserRepository appUserRepository;
 
     @Override
     public Order placeOrder(String userId, PlaceOrderRequest request) {
@@ -139,6 +142,45 @@ public class OrderServiceImpl implements OrderService {
     public List<Order> getAllOrders() {
         log.debug("Fetching all orders for administration");
         return orderRepository.findAllByOrderByCreatedAtDesc();
+    }
+
+    @Override
+    public List<OrderResponse> getAllOrdersForAdmin() {
+        log.debug("Fetching all orders with customer details for administration");
+
+        List<Order> orders =
+                orderRepository.findAllByOrderByCreatedAtDesc();
+
+        if (orders.isEmpty()) {
+            return List.of();
+        }
+
+        List<String> userIds = orders.stream()
+                .map(Order::getUserId)
+                .filter(userId ->
+                        userId != null && !userId.isBlank()
+                )
+                .distinct()
+                .toList();
+
+        Map<String, AppUser> customers =
+                appUserRepository.findAllById(userIds)
+                        .stream()
+                        .collect(
+                                Collectors.toMap(
+                                        AppUser::getId,
+                                        Function.identity()
+                                )
+                        );
+
+        return orders.stream()
+                .map(order ->
+                        OrderMapper.toResponse(
+                                order,
+                                customers.get(order.getUserId())
+                        )
+                )
+                .toList();
     }
 
     @Override

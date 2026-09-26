@@ -1,5 +1,6 @@
 package com.shippex.service;
 
+import com.shippex.dto.order.OrderResponse;
 import com.shippex.dto.order.PlaceOrderRequest;
 import com.shippex.dto.order.UpdateOrderStatusRequest;
 import com.shippex.model.Order;
@@ -11,5 +12,6 @@ public interface OrderService {
     List<Order> getOrdersForUser(String userId);
     Order cancelOrder(String orderId, String userId);
     List<Order> getAllOrders();
+    List<OrderResponse> getAllOrdersForAdmin();
     Order updateStatus(String orderId, UpdateOrderStatusRequest request);
 }
