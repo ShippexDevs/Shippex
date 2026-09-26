@@ -127,9 +127,9 @@ public class OrderServiceImpl implements OrderService {
             log.warn("Order cancellation denied: orderId={} does not belong to userId={}", orderId, userId);
             throw new OrderNotFoundException("Order not found with id: " + orderId);
         }
-        if (order.getStatus() != OrderStatus.PLACED && order.getStatus() != OrderStatus.CONFIRMED) {
+        if (order.getStatus() != OrderStatus.PLACED) {
             log.warn("Order cancellation rejected: orderId={} has status={}", orderId, order.getStatus());
-            throw new InvalidOrderStatusException("Only placed or confirmed orders can be cancelled.");
+            throw new InvalidOrderStatusException("Only placed orders can be cancelled by the customer.");
         }
         restock(order);
         order.setStatus(OrderStatus.CANCELLED);
@@ -188,9 +188,11 @@ public class OrderServiceImpl implements OrderService {
         Order order = findOrder(orderId);
         log.info("Updating order status: orderId={}, fromStatus={}, toStatus={}",
                 orderId, order.getStatus(), request.getStatus());
-        if (order.getStatus() == OrderStatus.DELIVERED || order.getStatus() == OrderStatus.CANCELLED) {
-            log.warn("Order status update rejected: orderId={} is already terminal with status={}", orderId, order.getStatus());
-            throw new InvalidOrderStatusException("A delivered or cancelled order cannot be updated.");
+        if (!isAllowedAdminTransition(order.getStatus(), request.getStatus())) {
+            log.warn("Order status update rejected: orderId={} cannot transition from {} to {}",
+                    orderId, order.getStatus(), request.getStatus());
+            throw new InvalidOrderStatusException(
+                    "Status transition from " + order.getStatus() + " to " + request.getStatus() + " is not allowed.");
         }
         if (request.getStatus() == OrderStatus.CANCELLED) {
             restock(order);
@@ -199,6 +201,18 @@ public class OrderServiceImpl implements OrderService {
         Order updatedOrder = orderRepository.save(order);
         log.info("Order status updated successfully: orderId={}, status={}", orderId, updatedOrder.getStatus());
         return updatedOrder;
+    }
+
+    private boolean isAllowedAdminTransition(OrderStatus current, OrderStatus target) {
+        if (current == null || target == null) {
+            return false;
+        }
+        return switch (current) {
+            case PLACED -> target == OrderStatus.CANCELLED || target == OrderStatus.CONFIRMED;
+            case CONFIRMED -> target == OrderStatus.CANCELLED || target == OrderStatus.OUT_FOR_DELIVERY;
+            case OUT_FOR_DELIVERY -> target == OrderStatus.DELIVERED || target == OrderStatus.CANCELLED;
+            case DELIVERED, CANCELLED -> false;
+        };
     }
 
     private Order findOrder(String orderId) {
