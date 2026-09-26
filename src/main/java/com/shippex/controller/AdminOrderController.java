@@ -5,6 +5,7 @@ import com.shippex.dto.order.OrderResponse;
 import com.shippex.dto.order.UpdateOrderStatusRequest;
 import com.shippex.mapper.OrderMapper;
 import com.shippex.service.OrderService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin/orders")
+@SecurityRequirement(name = "bearerAuth")
 @RequiredArgsConstructor
 @Slf4j
 public class AdminOrderController {

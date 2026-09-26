@@ -6,6 +6,7 @@ import com.shippex.dto.dashboard.DailyOrderOverviewResponse;
 import com.shippex.dto.dashboard.DashboardWidgetsResponse;
 import com.shippex.dto.dashboard.RecentActivityResponse;
 import com.shippex.service.DashboardService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ import java.util.List;
 @RestController
 @Validated
 @RequestMapping("/api/admin/dashboard")
+@SecurityRequirement(name = "bearerAuth")
 @RequiredArgsConstructor
 @Slf4j
 public class DashboardController {

@@ -3,6 +3,7 @@ package com.shippex.controller;
 import com.shippex.dto.ApiResponse;
 import com.shippex.dto.admin.*;
 import com.shippex.service.AdminService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,7 @@ public class AdminController {
     private final AdminService adminService;
 
     @PostMapping
+    @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<ApiResponse<CreateAdminResponse>> createAdmin(
             @Valid @RequestBody CreateAdminRequest request
     ) {
@@ -37,6 +39,7 @@ public class AdminController {
     }
 
     @GetMapping
+    @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<ApiResponse<List<AdminResponse>>> getAllAdmins() {
 
         log.info("Fetching all admins.");
@@ -52,6 +55,7 @@ public class AdminController {
     }
 
     @GetMapping("/{id}")
+    @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<ApiResponse<AdminResponse>> getAdminById(
             @PathVariable String id) {
 
@@ -66,6 +70,7 @@ public class AdminController {
     }
 
     @PutMapping("/{id}")
+    @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<ApiResponse<AdminResponse>> updateAdmin(
             @PathVariable String id,
             @Valid @RequestBody UpdateAdminRequest request) {
@@ -81,6 +86,7 @@ public class AdminController {
     }
 
     @PatchMapping("/{id}/enable")
+    @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<ApiResponse<Void>> enableAdmin(
             @PathVariable String id) {
 
@@ -94,6 +100,7 @@ public class AdminController {
     }
 
     @PatchMapping("/{id}/disable")
+    @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<ApiResponse<Void>> disableAdmin(
             @PathVariable String id) {
 
