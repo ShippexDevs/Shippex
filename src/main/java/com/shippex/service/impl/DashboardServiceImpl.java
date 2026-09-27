@@ -104,7 +104,7 @@ public class DashboardServiceImpl implements DashboardService {
                 .collect(Collectors.toMap(AppUser::getId, Function.identity()));
         List<AdminOrderResponse> orders = orderRepository.findByCreatedAtGreaterThanEqualOrderByCreatedAtDesc(cutoff(days)).stream()
                 .map(order -> AdminOrderResponse.builder()
-                        .order(OrderMapper.toResponse(order))
+                        .order(OrderMapper.toResponse(order, usersById.get(order.getUserId())))
                         .user(toUserResponse(usersById.get(order.getUserId())))
                         .build())
                 .toList();
