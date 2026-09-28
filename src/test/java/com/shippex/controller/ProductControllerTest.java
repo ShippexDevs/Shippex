@@ -4,6 +4,10 @@ import com.shippex.dto.product.CreateProductRequest;
 import com.shippex.dto.product.ProductResponse;
 import com.shippex.dto.product.UpdateProductRequest;
 import com.shippex.model.Product;
+import com.shippex.model.AppUser;
+import com.shippex.constants.AccountStatus;
+import com.shippex.constants.Role;
+import com.shippex.security.CustomUserDetails;
 import com.shippex.service.ProductService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -61,6 +65,44 @@ class ProductControllerTest {
     }
 
     @Test
+    void publicProductRequestsAreLimitedToFirstTenEvenWhenLaterPagesAreRequested() {
+        List<Product> products = products(35);
+        when(productService.getProductsByCategorySlug("deck-supplies")).thenReturn(products);
+        when(productService.getFeaturedProducts()).thenReturn(products);
+
+        var categoryPage = controller.getProductsByCategorySlug("deck-supplies", 10, 20, null);
+        var featuredPage = controller.getFeaturedProducts(10, 20, null);
+
+        assertEquals(10, categoryPage.getBody().size());
+        assertEquals("p-0", categoryPage.getBody().getFirst().getId());
+        assertEquals(10, featuredPage.getBody().size());
+        assertEquals("p-0", featuredPage.getBody().getFirst().getId());
+    }
+
+    @Test
+    void authenticatedAppUserCanRequestTheNextTwentyProducts() {
+        AppUser appUser = new AppUser();
+        appUser.setId("user-1");
+        appUser.setUsername("buyer");
+        appUser.setRole(Role.USER);
+        appUser.setAccountStatus(AccountStatus.ACTIVE);
+        CustomUserDetails principal = new CustomUserDetails(appUser);
+        List<Product> products = products(35);
+        when(productService.getProductsByCategorySlug("deck-supplies")).thenReturn(products);
+        when(productService.getFeaturedProducts()).thenReturn(products);
+
+        var categoryPage = controller.getProductsByCategorySlug("deck-supplies", 10, 20, principal);
+        var featuredPage = controller.getFeaturedProducts(10, 20, principal);
+
+        assertEquals(20, categoryPage.getBody().size());
+        assertEquals("p-10", categoryPage.getBody().getFirst().getId());
+        assertEquals("p-29", categoryPage.getBody().getLast().getId());
+        assertEquals(20, featuredPage.getBody().size());
+        assertEquals("p-10", featuredPage.getBody().getFirst().getId());
+        assertEquals("p-29", featuredPage.getBody().getLast().getId());
+    }
+
+    @Test
     void bulkEndpointReturnsServiceResponsesIncludingEmptyList() {
         List<CreateProductRequest> request = List.of(new CreateProductRequest());
         List<ProductResponse> response = List.of(ProductResponse.builder().id("p-1").build());
@@ -75,5 +117,11 @@ class ProductControllerTest {
         product.setId(id);
         product.setName(name);
         return product;
+    }
+
+    private List<Product> products(int count) {
+        return java.util.stream.IntStream.range(0, count)
+                .mapToObj(index -> product("p-" + index, "Product " + index))
+                .toList();
     }
 }

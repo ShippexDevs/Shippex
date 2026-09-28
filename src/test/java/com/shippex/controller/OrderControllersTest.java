@@ -73,6 +73,20 @@ class OrderControllersTest {
     }
 
     @Test
+    void getMyOrders_returnsTenByDefaultAndTheRequestedNextTwenty() {
+        when(orderService.getOrdersForUser("user-1")).thenReturn(orders(35));
+
+        var firstPage = orderController.getMyOrders(user);
+        var secondPage = orderController.getMyOrders(user, 10, 20);
+
+        assertEquals(10, firstPage.getBody().getData().size());
+        assertEquals("order-0", firstPage.getBody().getData().getFirst().getId());
+        assertEquals(20, secondPage.getBody().getData().size());
+        assertEquals("order-10", secondPage.getBody().getData().getFirst().getId());
+        assertEquals("order-29", secondPage.getBody().getData().getLast().getId());
+    }
+
+    @Test
     void cancelOrder_delegatesOrderAndAuthenticatedOwner() {
         when(orderService.cancelOrder("order-1", "user-1"))
                 .thenReturn(order("order-1", "user-1", OrderStatus.CANCELLED));
@@ -99,6 +113,20 @@ class OrderControllersTest {
     }
 
     @Test
+    void adminGetAllOrders_returnsTenByDefaultAndTheRequestedNextTwenty() {
+        when(orderService.getAllOrdersForAdmin()).thenReturn(orderResponses(35));
+
+        var firstPage = adminOrderController.getAllOrders();
+        var secondPage = adminOrderController.getAllOrders(10, 20);
+
+        assertEquals(10, firstPage.getBody().getData().size());
+        assertEquals("order-0", firstPage.getBody().getData().getFirst().getId());
+        assertEquals(20, secondPage.getBody().getData().size());
+        assertEquals("order-10", secondPage.getBody().getData().getFirst().getId());
+        assertEquals("order-29", secondPage.getBody().getData().getLast().getId());
+    }
+
+    @Test
     void adminUpdateStatus_delegatesRequestAndMapsUpdatedOrder() {
         UpdateOrderStatusRequest request = new UpdateOrderStatusRequest();
         request.setStatus(OrderStatus.CONFIRMED);
@@ -118,5 +146,17 @@ class OrderControllersTest {
         order.setOrderNumber("ORD-1");
         order.setStatus(status);
         return order;
+    }
+
+    private List<Order> orders(int count) {
+        return java.util.stream.IntStream.range(0, count)
+                .mapToObj(index -> order("order-" + index, "user-1", OrderStatus.PLACED))
+                .toList();
+    }
+
+    private List<com.shippex.dto.order.OrderResponse> orderResponses(int count) {
+        return java.util.stream.IntStream.range(0, count)
+                .mapToObj(index -> com.shippex.dto.order.OrderResponse.builder().id("order-" + index).build())
+                .toList();
     }
 }
