@@ -53,6 +53,7 @@ public class AdminServiceImpl implements AdminService {
                 Role.ADMIN,
                 AccountStatus.ACTIVE
         );
+        admin.setWhatsappContactNo(request.getWhatsappContactNo());
 
         AdminUser savedAdmin = adminUserRepository.save(admin);
 
@@ -169,7 +170,7 @@ public class AdminServiceImpl implements AdminService {
                 .accessToken(jwtToken)
                 .tokenType("Bearer")
                 .username(admin.getUsername())
-                .role(admin.getRole().name())
+                .role(admin.getRole().name().replace('_', ' '))
                 .firstLogin(admin.getFirstLogin())
                 .build();
 

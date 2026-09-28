@@ -38,6 +38,8 @@ class OrderServiceImplTest {
     private OrderRepository orderRepository;
     @Mock
     private ProductRepository productRepository;
+    @Mock
+    private OrderWhatsAppNotifier orderWhatsAppNotifier;
     @InjectMocks
     private OrderServiceImpl orderService;
 

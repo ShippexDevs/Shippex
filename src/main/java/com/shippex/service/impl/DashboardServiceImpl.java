@@ -66,7 +66,7 @@ public class DashboardServiceImpl implements DashboardService {
                 .revenue(revenueMetric(nonCancelledOrders, currentMonthOrders, previousMonthOrders))
                 .productCategoryDistribution(distribution(productRepository.findAll(), product -> product.getCategory()))
                 .orderStatusDistribution(distribution(orderRepository.findAll(), order ->
-                        order.getStatus() == null ? "UNKNOWN" : order.getStatus().name()))
+                        order.getStatus() == null ? "UNKNOWN" : order.getStatus().name().replace('_', ' ')))
                 .build();
         log.info("Dashboard widgets generated: totalOrders={}, totalUsers={}, totalProducts={}, totalRevenue={}",
                 response.getOrders().getTotal(), response.getUsers().getTotal(), response.getProducts().getTotal(),
@@ -128,7 +128,8 @@ public class DashboardServiceImpl implements DashboardService {
         }
         for (Order order : orderRepository.findByUpdatedAtGreaterThanEqual(cutoff)) {
             if (isLaterUpdate(order.getCreatedAt(), order.getUpdatedAt())) {
-                activity.add(activity("ORDER_UPDATED", "Order " + displayOrderNumber(order) + " status changed to " + order.getStatus() + ".", order.getUpdatedAt()));
+                activity.add(activity("ORDER_UPDATED", "Order " + displayOrderNumber(order) + " status changed to "
+                        + order.getStatus().name().replace('_', ' ') + ".", order.getUpdatedAt()));
             }
         }
         for (Product product : productRepository.findByCreatedAtGreaterThanEqual(cutoff)) {

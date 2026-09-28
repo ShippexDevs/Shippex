@@ -85,9 +85,10 @@ public class OtpService {
             );
 
             whatsAppService.sendTextMessage(new NotificationRequest(phoneNumber,
-                    "Your verification OTP is: "
-                            + otp
-                            + "\n\nThis OTP is valid for 5 minutes.")
+                    "\uD83D\uDD10 Your verification OTP is: *"
+                            + otp + "*"
+                            + "\n\n⏳ This OTP is valid for "+ RedisConstants.OTP_TTL.toMinutes() +" minutes."
+                            + "\n\nTeam Shippex")
             );
 
             log.info(
