@@ -21,6 +21,7 @@ import static org.mockito.Mockito.*;
 class ProductControllerTest {
     @Mock ProductService productService;
     @InjectMocks ProductController controller;
+    @InjectMocks AdminProductController adminController;
 
     @Test
     void addGetUpdateAndDeleteMapProductsAndPreserveHttpStatuses() {
@@ -32,12 +33,12 @@ class ProductControllerTest {
         when(productService.updateProductById("p-1", updateRequest)).thenReturn(product);
         when(productService.deleteProductById("p-1")).thenReturn(product);
 
-        var created = controller.addProduct(createRequest);
+        var created = adminController.addProduct(createRequest);
         assertEquals(HttpStatus.CREATED, created.getStatusCode());
         assertEquals("p-1", created.getBody().getId());
         assertEquals("Gloves", controller.getProductById("p-1").getBody().getName());
-        assertEquals("p-1", controller.updateProduct("p-1", updateRequest).getBody().getId());
-        assertEquals("p-1", controller.deleteProduct("p-1").getBody().getId());
+        assertEquals("p-1", adminController.updateProduct("p-1", updateRequest).getBody().getId());
+        assertEquals("p-1", adminController.deleteProduct("p-1").getBody().getId());
     }
 
     @Test
@@ -64,9 +65,9 @@ class ProductControllerTest {
         List<CreateProductRequest> request = List.of(new CreateProductRequest());
         List<ProductResponse> response = List.of(ProductResponse.builder().id("p-1").build());
         when(productService.addProductsBulk(request)).thenReturn(response);
-        assertSame(response, controller.addProductsBulk(request).getBody());
+        assertSame(response, adminController.addProductsBulk(request).getBody());
         when(productService.addProductsBulk(List.of())).thenReturn(List.of());
-        assertTrue(controller.addProductsBulk(List.of()).getBody().isEmpty());
+        assertTrue(adminController.addProductsBulk(List.of()).getBody().isEmpty());
     }
 
     private Product product(String id, String name) {
