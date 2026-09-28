@@ -33,6 +33,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final AppUserRepository appUserRepository;
+    private final OrderWhatsAppNotifier orderWhatsAppNotifier;
 
     @Override
     public Order placeOrder(String userId, PlaceOrderRequest request) {
@@ -106,6 +107,7 @@ public class OrderServiceImpl implements OrderService {
         order.setOrderInstructions(request.getOrderInstructions());
         order.setPaymentMethod(request.getPaymentMethod());
         Order savedOrder = orderRepository.save(order);
+        scheduleOrderPlacedNotification(savedOrder);
         log.info("Order placed successfully: orderId={}, orderNumber={}, userId={}, total={}, currency={}",
                 savedOrder.getId(), savedOrder.getOrderNumber(), userId, savedOrder.getTotalAmount(), savedOrder.getCurrency());
         return savedOrder;
@@ -134,6 +136,7 @@ public class OrderServiceImpl implements OrderService {
         restock(order);
         order.setStatus(OrderStatus.CANCELLED);
         Order cancelledOrder = orderRepository.save(order);
+        scheduleStatusNotification(cancelledOrder);
         log.info("Order cancelled successfully: orderId={}, userId={}", orderId, userId);
         return cancelledOrder;
     }
@@ -199,6 +202,7 @@ public class OrderServiceImpl implements OrderService {
         }
         order.setStatus(request.getStatus());
         Order updatedOrder = orderRepository.save(order);
+        scheduleStatusNotification(updatedOrder);
         log.info("Order status updated successfully: orderId={}, status={}", orderId, updatedOrder.getStatus());
         return updatedOrder;
     }
@@ -213,6 +217,22 @@ public class OrderServiceImpl implements OrderService {
             case OUT_FOR_DELIVERY -> target == OrderStatus.DELIVERED || target == OrderStatus.CANCELLED;
             case DELIVERED, CANCELLED -> false;
         };
+    }
+
+    private void scheduleOrderPlacedNotification(Order order) {
+        try {
+            orderWhatsAppNotifier.orderPlaced(order);
+        } catch (RuntimeException exception) {
+            log.error("Could not queue WhatsApp notifications for order {}", order.getOrderNumber(), exception);
+        }
+    }
+
+    private void scheduleStatusNotification(Order order) {
+        try {
+            orderWhatsAppNotifier.statusChanged(order);
+        } catch (RuntimeException exception) {
+            log.error("Could not queue WhatsApp status notification for order {}", order.getOrderNumber(), exception);
+        }
     }
 
     private Order findOrder(String orderId) {

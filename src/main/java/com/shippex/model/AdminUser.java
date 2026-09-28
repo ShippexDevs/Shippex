@@ -24,6 +24,7 @@ public class AdminUser extends BaseUser{
     private Boolean mfaEnabled;
     private Boolean firstLogin;
     private LocalDateTime lastLoginAt;
+    private String whatsappContactNo;
 
     public AdminUser(String name,
                      String username,
