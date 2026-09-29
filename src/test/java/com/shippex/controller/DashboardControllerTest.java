@@ -1,6 +1,8 @@
 package com.shippex.controller;
 
 import com.shippex.dto.dashboard.DashboardWidgetsResponse;
+import com.shippex.dto.dashboard.AdminOrderResponse;
+import com.shippex.dto.order.OrderResponse;
 import com.shippex.service.DashboardService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,5 +44,24 @@ class DashboardControllerTest {
     void dashboardServiceFailuresPropagate() {
         when(dashboardService.getRecentActivity(1)).thenThrow(new IllegalArgumentException("days out of range"));
         assertThrows(IllegalArgumentException.class, () -> controller.getRecentActivity(1));
+    }
+
+    @Test
+    void recentOrdersReturnsTenByDefaultAndTheRequestedNextTwenty() {
+        List<AdminOrderResponse> orders = java.util.stream.IntStream.range(0, 35)
+                .mapToObj(index -> AdminOrderResponse.builder()
+                        .order(OrderResponse.builder().id("order-" + index).build())
+                        .build())
+                .toList();
+        when(dashboardService.getRecentOrders(7)).thenReturn(orders);
+
+        var firstPage = controller.getRecentOrders(7);
+        var secondPage = controller.getRecentOrders(7, 10, 20);
+
+        assertEquals(10, firstPage.getBody().getData().size());
+        assertEquals("order-0", firstPage.getBody().getData().getFirst().getOrder().getId());
+        assertEquals(20, secondPage.getBody().getData().size());
+        assertEquals("order-10", secondPage.getBody().getData().getFirst().getOrder().getId());
+        assertEquals("order-29", secondPage.getBody().getData().getLast().getOrder().getId());
     }
 }

@@ -14,25 +14,22 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import com.shippex.model.AppUser;
+import com.shippex.security.CustomUserDetails;
+import com.shippex.util.Pagination;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 
 @RestController
+@Validated
 @RequestMapping("/api/v1/products")
 @RequiredArgsConstructor
 @Slf4j
 public class ProductController {
 
     private final ProductService productService;
-
-    @PostMapping
-    public ResponseEntity<ProductResponse> addProduct(
-            @Valid @RequestBody CreateProductRequest request) {
-
-        Product product = productService.addProduct(request);
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(ProductMapper.toResponse(product));
-    }
 
     @GetMapping("/{id}")
     public ResponseEntity<ProductResponse> getProductById(
@@ -43,28 +40,12 @@ public class ProductController {
         return ResponseEntity.ok(ProductMapper.toResponse(product));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<ProductResponse> updateProduct(
-            @PathVariable String id,
-            @Valid @RequestBody UpdateProductRequest request) {
-
-        Product product = productService.updateProductById(id, request);
-
-        return ResponseEntity.ok(ProductMapper.toResponse(product));
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ProductResponse> deleteProduct(
-            @PathVariable String id) {
-
-        Product product = productService.deleteProductById(id);
-
-        return ResponseEntity.ok(ProductMapper.toResponse(product));
-    }
-
     @GetMapping("/category/{categorySlug}")
     public ResponseEntity<List<ProductResponse>> getProductsByCategorySlug(
-            @PathVariable String categorySlug) {
+            @PathVariable String categorySlug,
+            @RequestParam(defaultValue = "0") @Min(0) int offset,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int limit,
+            @AuthenticationPrincipal Object principal) {
 
         log.info(
                 "Received request to fetch products with categorySlug: {}",
@@ -77,12 +58,18 @@ public class ProductController {
         List<ProductResponse> response = products.stream()
                 .map(ProductMapper::toResponse)
                 .toList();
+        return ResponseEntity.ok(pageProducts(response, offset, limit, principal));
+    }
 
-        return ResponseEntity.ok(response);
+    public ResponseEntity<List<ProductResponse>> getProductsByCategorySlug(String categorySlug) {
+        return getProductsByCategorySlug(categorySlug, 0, 10, null);
     }
 
     @GetMapping("/featured")
-    public ResponseEntity<List<ProductResponse>> getFeaturedProducts() {
+    public ResponseEntity<List<ProductResponse>> getFeaturedProducts(
+            @RequestParam(defaultValue = "0") @Min(0) int offset,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int limit,
+            @AuthenticationPrincipal Object principal) {
 
         log.info("Received request to fetch featured products");
 
@@ -91,17 +78,21 @@ public class ProductController {
         List<ProductResponse> response = products.stream()
                 .map(ProductMapper::toResponse)
                 .toList();
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(pageProducts(response, offset, limit, principal));
     }
 
-    @PostMapping("/bulk")
-    public ResponseEntity<List<ProductResponse>> addProductsBulk(
-            @RequestBody List<CreateProductRequest> products) {
+    public ResponseEntity<List<ProductResponse>> getFeaturedProducts() {
+        return getFeaturedProducts(0, 10, null);
+    }
 
-        List<ProductResponse> savedProducts =
-                productService.addProductsBulk(products);
+    private boolean appUserCanPage(Object principal) {
+        return principal instanceof CustomUserDetails details && details.getUser() instanceof AppUser;
+    }
 
-        return ResponseEntity.ok(savedProducts);
+    private List<ProductResponse> pageProducts(List<ProductResponse> products, int offset, int limit, Object principal) {
+        if (appUserCanPage(principal)) {
+            return Pagination.slice(products, offset, limit);
+        }
+        return Pagination.slice(products, 0, 10);
     }
 }
