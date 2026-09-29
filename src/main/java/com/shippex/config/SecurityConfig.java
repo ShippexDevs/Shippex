@@ -66,7 +66,10 @@ public class SecurityConfig {
                                 "/actuator/**",
                                 "/api/test/email",
                                 "/api/admin/login",
-                                "/api/v1/products/**"
+                                "/api/v1/products/**",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html"
                         )
                         .permitAll()
 

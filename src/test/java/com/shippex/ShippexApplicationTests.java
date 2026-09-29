@@ -1,13 +1,17 @@
 package com.shippex;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-@SpringBootTest
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 class ShippexApplicationTests {
 
 	@Test
-	void contextLoads() {
+	void applicationEnablesSpringBootAndAsyncExecution() {
+		assertNotNull(ShippexApplication.class.getAnnotation(SpringBootApplication.class));
+		assertNotNull(ShippexApplication.class.getAnnotation(EnableAsync.class));
 	}
 
 }

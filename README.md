@@ -80,6 +80,16 @@ Backend
 http://localhost:8080
 ```
 
+## 📚 API Documentation
+
+With the backend running, open Swagger UI at:
+
+```text
+http://localhost:8080/swagger-ui.html
+```
+
+The OpenAPI JSON document is available at `http://localhost:8080/v3/api-docs`. For protected endpoints, use **Authorize** in Swagger UI and enter your JWT access token; the `Bearer` prefix is added automatically. Obtain a user token from `POST /api/public/login` or an admin token from `POST /api/admin/login`.
+
 Redis
 
 ```

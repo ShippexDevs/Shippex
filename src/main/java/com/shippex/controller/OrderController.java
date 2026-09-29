@@ -7,6 +7,7 @@ import com.shippex.mapper.OrderMapper;
 import com.shippex.model.Order;
 import com.shippex.security.CustomUserDetails;
 import com.shippex.service.OrderService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,11 +21,18 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.validation.annotation.Validated;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Max;
+import com.shippex.util.Pagination;
 
 import java.util.List;
 
 @RestController
+@Validated
 @RequestMapping("/api/v1/orders")
+@SecurityRequirement(name = "bearerAuth")
 @RequiredArgsConstructor
 @Slf4j
 public class OrderController {
@@ -42,11 +50,18 @@ public class OrderController {
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<List<OrderResponse>>> getMyOrders(
-            @AuthenticationPrincipal CustomUserDetails user) {
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestParam(defaultValue = "0") @Min(0) int offset,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int limit) {
         log.debug("Order history request received for userId={}", user.getId());
         List<OrderResponse> orders = orderService.getOrdersForUser(user.getId()).stream()
                 .map(OrderMapper::toResponse).toList();
+        orders = Pagination.slice(orders, offset, limit);
         return ResponseEntity.ok(ApiResponse.success("Orders retrieved successfully.", orders));
+    }
+
+    public ResponseEntity<ApiResponse<List<OrderResponse>>> getMyOrders(CustomUserDetails user) {
+        return getMyOrders(user, 0, 10);
     }
 
     @PatchMapping("/{id}/cancel")

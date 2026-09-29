@@ -17,5 +17,6 @@ public class CreateAdminRequest {
     @Email(message = "Enter valid email.")
     @NotBlank(message = "Email is required.")
     private String email;
+    private String whatsappContactNo;
     private Boolean mfaEnabled = true;
 }

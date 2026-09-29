@@ -1,17 +1,16 @@
 package com.shippex.service.impl;
 
 import com.shippex.dto.order.OrderItemRequest;
+import com.shippex.dto.order.OrderResponse;
 import com.shippex.dto.order.PlaceOrderRequest;
 import com.shippex.dto.order.UpdateOrderStatusRequest;
 import com.shippex.exception.InsufficientStockException;
 import com.shippex.exception.InvalidOrderStatusException;
 import com.shippex.exception.OrderNotFoundException;
 import com.shippex.exception.ProductNotFoundException;
-import com.shippex.model.Order;
-import com.shippex.model.DeliveryDestination;
-import com.shippex.model.OrderItem;
-import com.shippex.model.OrderStatus;
-import com.shippex.model.Product;
+import com.shippex.mapper.OrderMapper;
+import com.shippex.model.*;
+import com.shippex.repository.AppUserRepository;
 import com.shippex.repository.OrderRepository;
 import com.shippex.repository.ProductRepository;
 import com.shippex.service.OrderService;
@@ -22,7 +21,10 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +32,8 @@ import java.util.UUID;
 public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
+    private final AppUserRepository appUserRepository;
+    private final OrderWhatsAppNotifier orderWhatsAppNotifier;
 
     @Override
     public Order placeOrder(String userId, PlaceOrderRequest request) {
@@ -103,6 +107,7 @@ public class OrderServiceImpl implements OrderService {
         order.setOrderInstructions(request.getOrderInstructions());
         order.setPaymentMethod(request.getPaymentMethod());
         Order savedOrder = orderRepository.save(order);
+        scheduleOrderPlacedNotification(savedOrder);
         log.info("Order placed successfully: orderId={}, orderNumber={}, userId={}, total={}, currency={}",
                 savedOrder.getId(), savedOrder.getOrderNumber(), userId, savedOrder.getTotalAmount(), savedOrder.getCurrency());
         return savedOrder;
@@ -124,13 +129,14 @@ public class OrderServiceImpl implements OrderService {
             log.warn("Order cancellation denied: orderId={} does not belong to userId={}", orderId, userId);
             throw new OrderNotFoundException("Order not found with id: " + orderId);
         }
-        if (order.getStatus() != OrderStatus.PLACED && order.getStatus() != OrderStatus.CONFIRMED) {
+        if (order.getStatus() != OrderStatus.PLACED) {
             log.warn("Order cancellation rejected: orderId={} has status={}", orderId, order.getStatus());
-            throw new InvalidOrderStatusException("Only placed or confirmed orders can be cancelled.");
+            throw new InvalidOrderStatusException("Only placed orders can be cancelled by the customer.");
         }
         restock(order);
         order.setStatus(OrderStatus.CANCELLED);
         Order cancelledOrder = orderRepository.save(order);
+        scheduleStatusNotification(cancelledOrder);
         log.info("Order cancelled successfully: orderId={}, userId={}", orderId, userId);
         return cancelledOrder;
     }
@@ -142,21 +148,91 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    public List<OrderResponse> getAllOrdersForAdmin() {
+        log.debug("Fetching all orders with customer details for administration");
+
+        List<Order> orders =
+                orderRepository.findAllByOrderByCreatedAtDesc();
+
+        if (orders.isEmpty()) {
+            return List.of();
+        }
+
+        List<String> userIds = orders.stream()
+                .map(Order::getUserId)
+                .filter(userId ->
+                        userId != null && !userId.isBlank()
+                )
+                .distinct()
+                .toList();
+
+        Map<String, AppUser> customers =
+                appUserRepository.findAllById(userIds)
+                        .stream()
+                        .collect(
+                                Collectors.toMap(
+                                        AppUser::getId,
+                                        Function.identity()
+                                )
+                        );
+
+        return orders.stream()
+                .map(order ->
+                        OrderMapper.toResponse(
+                                order,
+                                customers.get(order.getUserId())
+                        )
+                )
+                .toList();
+    }
+
+    @Override
     public Order updateStatus(String orderId, UpdateOrderStatusRequest request) {
         Order order = findOrder(orderId);
         log.info("Updating order status: orderId={}, fromStatus={}, toStatus={}",
                 orderId, order.getStatus(), request.getStatus());
-        if (order.getStatus() == OrderStatus.DELIVERED || order.getStatus() == OrderStatus.CANCELLED) {
-            log.warn("Order status update rejected: orderId={} is already terminal with status={}", orderId, order.getStatus());
-            throw new InvalidOrderStatusException("A delivered or cancelled order cannot be updated.");
+        if (!isAllowedAdminTransition(order.getStatus(), request.getStatus())) {
+            log.warn("Order status update rejected: orderId={} cannot transition from {} to {}",
+                    orderId, order.getStatus(), request.getStatus());
+            throw new InvalidOrderStatusException(
+                    "Status transition from " + order.getStatus() + " to " + request.getStatus() + " is not allowed.");
         }
         if (request.getStatus() == OrderStatus.CANCELLED) {
             restock(order);
         }
         order.setStatus(request.getStatus());
         Order updatedOrder = orderRepository.save(order);
+        scheduleStatusNotification(updatedOrder);
         log.info("Order status updated successfully: orderId={}, status={}", orderId, updatedOrder.getStatus());
         return updatedOrder;
+    }
+
+    private boolean isAllowedAdminTransition(OrderStatus current, OrderStatus target) {
+        if (current == null || target == null) {
+            return false;
+        }
+        return switch (current) {
+            case PLACED -> target == OrderStatus.CANCELLED || target == OrderStatus.CONFIRMED;
+            case CONFIRMED -> target == OrderStatus.CANCELLED || target == OrderStatus.OUT_FOR_DELIVERY;
+            case OUT_FOR_DELIVERY -> target == OrderStatus.DELIVERED || target == OrderStatus.CANCELLED;
+            case DELIVERED, CANCELLED -> false;
+        };
+    }
+
+    private void scheduleOrderPlacedNotification(Order order) {
+        try {
+            orderWhatsAppNotifier.orderPlaced(order);
+        } catch (RuntimeException exception) {
+            log.error("Could not queue WhatsApp notifications for order {}", order.getOrderNumber(), exception);
+        }
+    }
+
+    private void scheduleStatusNotification(Order order) {
+        try {
+            orderWhatsAppNotifier.statusChanged(order);
+        } catch (RuntimeException exception) {
+            log.error("Could not queue WhatsApp status notification for order {}", order.getOrderNumber(), exception);
+        }
     }
 
     private Order findOrder(String orderId) {

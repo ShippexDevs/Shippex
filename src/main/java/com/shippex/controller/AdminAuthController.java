@@ -5,6 +5,7 @@ import com.shippex.dto.admin.ChangePasswordRequest;
 import com.shippex.dto.admin.ChangePasswordResponse;
 import com.shippex.security.CustomUserDetails;
 import com.shippex.service.AdminAuthService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/admin/auth")
+@SecurityRequirement(name = "bearerAuth")
 @RequiredArgsConstructor
 @Slf4j
 public class AdminAuthController {

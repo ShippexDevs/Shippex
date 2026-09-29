@@ -38,6 +38,8 @@ class OrderServiceImplTest {
     private OrderRepository orderRepository;
     @Mock
     private ProductRepository productRepository;
+    @Mock
+    private OrderWhatsAppNotifier orderWhatsAppNotifier;
     @InjectMocks
     private OrderServiceImpl orderService;
 
@@ -199,15 +201,14 @@ class OrderServiceImplTest {
     }
 
     @Test
-    void cancelOrder_ShouldCancelConfirmedOrder() {
+    void cancelOrder_ShouldRejectConfirmedOrder() {
         Order order = order("order-1", "user-1", OrderStatus.CONFIRMED);
         when(orderRepository.findById("order-1")).thenReturn(Optional.of(order));
-        when(productRepository.findById("product-1")).thenReturn(Optional.of(product));
-        when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Order result = orderService.cancelOrder("order-1", "user-1");
+        assertThrows(InvalidOrderStatusException.class, () -> orderService.cancelOrder("order-1", "user-1"));
 
-        assertEquals(OrderStatus.CANCELLED, result.getStatus());
+        verify(productRepository, never()).saveAll(any());
+        verify(orderRepository, never()).save(any());
     }
 
     @Test
@@ -236,7 +237,8 @@ class OrderServiceImplTest {
 
     @Test
     void cancelOrder_ShouldRejectTerminalOrDeliveryOrders() {
-        for (OrderStatus status : List.of(OrderStatus.OUT_FOR_DELIVERY, OrderStatus.DELIVERED, OrderStatus.CANCELLED)) {
+        for (OrderStatus status : List.of(OrderStatus.CONFIRMED, OrderStatus.OUT_FOR_DELIVERY,
+                OrderStatus.DELIVERED, OrderStatus.CANCELLED)) {
             reset(orderRepository);
             when(orderRepository.findById("order-1")).thenReturn(Optional.of(order("order-1", "user-1", status)));
 
@@ -265,6 +267,61 @@ class OrderServiceImplTest {
         assertEquals(OrderStatus.CONFIRMED, result.getStatus());
         verify(productRepository, never()).saveAll(any());
         verify(orderRepository).save(order);
+    }
+
+    @Test
+    void updateStatus_ShouldAllowOnlyConfiguredAdminTransitions() {
+        List<List<OrderStatus>> transitions = List.of(
+                List.of(OrderStatus.PLACED, OrderStatus.CANCELLED),
+                List.of(OrderStatus.PLACED, OrderStatus.CONFIRMED),
+                List.of(OrderStatus.CONFIRMED, OrderStatus.CANCELLED),
+                List.of(OrderStatus.CONFIRMED, OrderStatus.OUT_FOR_DELIVERY),
+                List.of(OrderStatus.OUT_FOR_DELIVERY, OrderStatus.DELIVERED),
+                List.of(OrderStatus.OUT_FOR_DELIVERY, OrderStatus.CANCELLED));
+
+        for (List<OrderStatus> transition : transitions) {
+            OrderStatus from = transition.get(0);
+            OrderStatus to = transition.get(1);
+            reset(orderRepository, productRepository);
+            Order order = order("order-1", "user-1", from);
+            when(orderRepository.findById("order-1")).thenReturn(Optional.of(order));
+            when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
+            if (to == OrderStatus.CANCELLED) {
+                when(productRepository.findById("product-1")).thenReturn(Optional.of(product));
+            }
+
+            Order result = orderService.updateStatus("order-1", statusRequest(to));
+
+            assertEquals(to, result.getStatus(), from + " -> " + to);
+            verify(orderRepository).save(order);
+            verify(productRepository, to == OrderStatus.CANCELLED ? times(1) : never()).saveAll(any());
+        }
+    }
+
+    @Test
+    void updateStatus_ShouldRejectEveryUnconfiguredAdminTransition() {
+        for (OrderStatus from : OrderStatus.values()) {
+            for (OrderStatus to : OrderStatus.values()) {
+                boolean allowed = switch (from) {
+                    case PLACED -> to == OrderStatus.CANCELLED || to == OrderStatus.CONFIRMED;
+                    case CONFIRMED -> to == OrderStatus.CANCELLED || to == OrderStatus.OUT_FOR_DELIVERY;
+                    case OUT_FOR_DELIVERY -> to == OrderStatus.DELIVERED || to == OrderStatus.CANCELLED;
+                    case DELIVERED, CANCELLED -> false;
+                };
+                if (allowed) {
+                    continue;
+                }
+
+                reset(orderRepository, productRepository);
+                when(orderRepository.findById("order-1"))
+                        .thenReturn(Optional.of(order("order-1", "user-1", from)));
+
+                assertThrows(InvalidOrderStatusException.class,
+                        () -> orderService.updateStatus("order-1", statusRequest(to)), from + " -> " + to);
+                verify(orderRepository, never()).save(any());
+                verify(productRepository, never()).saveAll(any());
+            }
+        }
     }
 
     @Test

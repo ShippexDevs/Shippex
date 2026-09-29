@@ -6,6 +6,7 @@ import com.shippex.dto.dashboard.DailyOrderOverviewResponse;
 import com.shippex.dto.dashboard.DashboardWidgetsResponse;
 import com.shippex.dto.dashboard.RecentActivityResponse;
 import com.shippex.service.DashboardService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -18,10 +19,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import com.shippex.util.Pagination;
 
 @RestController
 @Validated
 @RequestMapping("/api/admin/dashboard")
+@SecurityRequirement(name = "bearerAuth")
 @RequiredArgsConstructor
 @Slf4j
 public class DashboardController {
@@ -44,10 +47,16 @@ public class DashboardController {
 
     @GetMapping("/orders")
     public ResponseEntity<ApiResponse<List<AdminOrderResponse>>> getRecentOrders(
-            @RequestParam(defaultValue = "30") @Min(1) @Max(365) int days) {
-        log.debug("Admin dashboard recent orders request received for days={}", days);
+            @RequestParam(defaultValue = "30") @Min(1) @Max(365) int days,
+            @RequestParam(defaultValue = "0") @Min(0) int offset,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int limit) {
+        log.debug("Admin dashboard recent orders request received for days={}, offset={}, limit={}", days, offset, limit);
         return ResponseEntity.ok(ApiResponse.success("Recent orders retrieved successfully.",
-                dashboardService.getRecentOrders(days)));
+                Pagination.slice(dashboardService.getRecentOrders(days), offset, limit)));
+    }
+
+    public ResponseEntity<ApiResponse<List<AdminOrderResponse>>> getRecentOrders(int days) {
+        return getRecentOrders(days, 0, 10);
     }
 
     @GetMapping("/recentActivity")
