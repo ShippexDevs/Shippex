@@ -75,7 +75,7 @@ public final class OrderMapper {
                 .designation(
                         customer.getDesignation() == null
                                 ? null
-                                : customer.getDesignation().name()
+                                : customer.getDesignation().name().replace('_', ' ')
                 )
                 .shipName(customer.getShipName())
                 .shipIMONumber(
