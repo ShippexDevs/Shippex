@@ -3,6 +3,10 @@ package com.shippex.service.impl;
 import com.shippex.constants.Designation;
 import com.shippex.controller.AppUserController;
 import com.shippex.dto.ApiResponse;
+import com.shippex.dto.UpdateAppUserFieldRequest;
+import com.shippex.dto.UpdateEmailRequest;
+import com.shippex.dto.ChangePasswordRequest;
+import com.shippex.dto.otp.VerifyOtpRequest;
 import com.shippex.dto.auth.CurrentUserResponse;
 import com.shippex.model.AppUser;
 import com.shippex.security.CustomUserDetails;
@@ -17,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -113,5 +118,35 @@ class AppUserControllerTest {
 
         verify(appUserService, times(1))
                 .getByUsername("john123");
+    }
+
+    @Test
+    void updateProfileEndpoints_shouldDelegateUsingAuthenticatedUsername() {
+        controller.updatePassword(principal, new ChangePasswordRequest("OldSecret", "Secret123!"));
+        VerifyOtpRequest phoneRequest = new VerifyOtpRequest();
+        phoneRequest.setPhoneNumber("+12025550123");
+        phoneRequest.setOtp("123456");
+        controller.updateWhatsappContactNo(principal, phoneRequest);
+        controller.updateName(principal, new UpdateAppUserFieldRequest("Jane Doe"));
+        controller.updateEmail(principal, new UpdateEmailRequest("jane@example.com"));
+        controller.updateDesignation(principal, new UpdateAppUserFieldRequest("master"));
+        controller.updateShipName(principal, new UpdateAppUserFieldRequest("Endeavour"));
+        controller.updateShipIMONumber(principal, new UpdateAppUserFieldRequest("7654321"));
+
+        verify(appUserService).updatePassword("john123", "OldSecret", "Secret123!");
+        verify(appUserService).verifyAndUpdateWhatsappContactNo("john123", phoneRequest);
+        verify(appUserService).updateName("john123", "Jane Doe");
+        verify(appUserService).updateEmail("john123", "jane@example.com");
+        verify(appUserService).updateDesignation("john123", Designation.MASTER);
+        verify(appUserService).updateShipName("john123", "Endeavour");
+        verify(appUserService).updateShipIMONumber("john123", "7654321");
+    }
+
+    @Test
+    void updateDesignation_shouldRejectUnknownValue() {
+        assertThatThrownBy(() -> controller.updateDesignation(principal, new UpdateAppUserFieldRequest("captain")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Designation is invalid.");
+        verifyNoInteractions(appUserService);
     }
 }
