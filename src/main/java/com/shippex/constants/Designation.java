@@ -1,5 +1,12 @@
 package com.shippex.constants;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.shippex.serialization.EnumNameDeserializer;
+import com.shippex.serialization.EnumNameSerializer;
+
+@JsonSerialize(using = EnumNameSerializer.class)
+@JsonDeserialize(using = EnumNameDeserializer.class)
 public enum Designation {
     MASTER,
     CHIEF_OFFICER,
