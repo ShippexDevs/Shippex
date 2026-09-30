@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -37,6 +38,10 @@ public class AuthController {
                     )
             );
 
+        } catch (DisabledException ex) {
+            log.warn("Login failed for disabled account username={}", request.getUsername());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.failure("Your account is disabled. Please contact support."));
         } catch (BadCredentialsException ex) {
             log.warn("Login failed for username={}. Invalid credentials.", request.getUsername());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)

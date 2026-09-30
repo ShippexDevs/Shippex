@@ -30,4 +30,5 @@ public class CurrentUserResponse {
 
     private Boolean verified;
 
+    private String accountStatus;
 }

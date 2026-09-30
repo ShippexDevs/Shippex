@@ -6,6 +6,8 @@ import com.shippex.dto.admin.AdminResponse;
 import com.shippex.dto.admin.CreateAdminRequest;
 import com.shippex.dto.admin.CreateAdminResponse;
 import com.shippex.dto.admin.UpdateAdminRequest;
+import com.shippex.dto.admin.UpdateAppUserStatusRequest;
+import com.shippex.dto.auth.CurrentUserResponse;
 import com.shippex.service.AdminService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -56,6 +58,31 @@ class AdminControllerTest {
         assertEquals(HttpStatus.OK, controller.disableAdmin("id-1").getStatusCode());
         verify(adminService).enableAdmin("id-1");
         verify(adminService).disableAdmin("id-1");
+    }
+
+    @Test
+    void getAllUsers_returnsServiceResults() {
+        CurrentUserResponse user = CurrentUserResponse.builder().id("user-1").username("crew").build();
+        when(adminService.getAllAppUsers()).thenReturn(List.of(user));
+
+        var response = controller.getAllUsers();
+
+        assertEquals(List.of(user), response.getData());
+        verify(adminService).getAllAppUsers();
+    }
+
+    @Test
+    void updateAppUserStatus_delegatesIdAndEnabledFlag() {
+        UpdateAppUserStatusRequest request = new UpdateAppUserStatusRequest();
+        request.setEnabled(false);
+        CurrentUserResponse updatedUser = CurrentUserResponse.builder()
+                .id("user-1").accountStatus("DISABLED").build();
+        when(adminService.updateAppUserStatus("user-1", false)).thenReturn(updatedUser);
+
+        var response = controller.updateAppUserStatus("user-1", request);
+
+        assertSame(updatedUser, response.getData());
+        verify(adminService).updateAppUserStatus("user-1", false);
     }
 
     @Test
