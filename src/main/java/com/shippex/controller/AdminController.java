@@ -2,6 +2,7 @@ package com.shippex.controller;
 
 import com.shippex.dto.ApiResponse;
 import com.shippex.dto.admin.*;
+import com.shippex.dto.auth.CurrentUserResponse;
 import com.shippex.service.AdminService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
@@ -122,5 +123,26 @@ public class AdminController {
         return ResponseEntity.ok(
                 adminService.login(request)
         );
+    }
+    @GetMapping("/users")
+    public ApiResponse<List<CurrentUserResponse>> getAllUsers() {
+        return ApiResponse.success(
+                "AppUsers retrieved successfully.",
+                adminService.getAllAppUsers()
+        );
+    }
+
+    @PatchMapping("/{userId}/status")
+    public ApiResponse<CurrentUserResponse> updateAppUserStatus(
+            @PathVariable String userId,
+            @Valid @RequestBody UpdateAppUserStatusRequest request
+    ) {
+        CurrentUserResponse response =
+                adminService.updateAppUserStatus(
+                        userId,
+                        request.getEnabled()
+                );
+
+        return ApiResponse.success("Status changed for AppUser.",response);
     }
 }

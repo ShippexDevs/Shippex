@@ -15,4 +15,5 @@ public interface AppUserRepository extends MongoRepository<AppUser, String> {
     long countByCreatedAtBetween(LocalDateTime from, LocalDateTime until);
     List<AppUser> findByCreatedAtGreaterThanEqual(LocalDateTime createdAt);
     List<AppUser> findByLastUpdatedAtGreaterThanEqual(LocalDateTime lastUpdatedAt);
+    List<AppUser> findAllByOrderByCreatedAtDesc();
 }

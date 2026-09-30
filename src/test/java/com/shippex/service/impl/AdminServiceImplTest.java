@@ -5,6 +5,8 @@ import com.shippex.constants.Role;
 import com.shippex.dto.admin.AdminLoginRequest;
 import com.shippex.dto.admin.CreateAdminRequest;
 import com.shippex.dto.admin.CreateAdminResponse;
+import com.shippex.constants.Designation;
+import com.shippex.model.AppUser;
 import com.shippex.exception.DuplicateEmailException;
 import com.shippex.exception.DuplicateUsernameException;
 import com.shippex.model.AdminUser;
@@ -125,6 +127,76 @@ class AdminServiceImplTest {
         when(passwordEncoder.matches("secret", "encoded")).thenReturn(true);
         assertThrows(IllegalStateException.class, () -> service.login(loginRequest("ada", "secret")));
         verify(adminUserRepository, never()).save(any());
+    }
+
+    @Test
+    void getAllAppUsers_returnsMappedUsersInRepositoryOrder() {
+        AppUser user = appUser("user-1", AccountStatus.ACTIVE);
+        when(appUserRepository.findAllByOrderByCreatedAtDesc()).thenReturn(java.util.List.of(user));
+
+        var result = service.getAllAppUsers();
+
+        assertEquals(1, result.size());
+        assertEquals("user-1", result.get(0).getId());
+        assertEquals("crew", result.get(0).getUsername());
+        assertEquals("Crew Member", result.get(0).getName());
+        assertEquals("crew@example.com", result.get(0).getEmail());
+        assertEquals("+15550000000", result.get(0).getWhatsappContactNo());
+        assertEquals(Designation.MASTER, result.get(0).getDesignation());
+        assertEquals("MV Test", result.get(0).getShipName());
+        assertEquals("1234567", result.get(0).getShipIMONumber());
+        assertEquals(Boolean.TRUE, result.get(0).getVerified());
+        assertEquals("ACTIVE", result.get(0).getAccountStatus());
+        verify(appUserRepository).findAllByOrderByCreatedAtDesc();
+    }
+
+    @Test
+    void updateAppUserStatus_enablesUserAndReturnsUpdatedStatus() {
+        AppUser user = appUser("user-1", AccountStatus.DISABLED);
+        when(appUserRepository.findById("user-1")).thenReturn(Optional.of(user));
+        when(appUserRepository.save(user)).thenReturn(user);
+
+        var result = service.updateAppUserStatus("user-1", true);
+
+        assertEquals(AccountStatus.ACTIVE, user.getAccountStatus());
+        assertEquals("ACTIVE", result.getAccountStatus());
+        verify(appUserRepository).save(user);
+    }
+
+    @Test
+    void updateAppUserStatus_disablesUserAndReturnsUpdatedStatus() {
+        AppUser user = appUser("user-1", AccountStatus.ACTIVE);
+        when(appUserRepository.findById("user-1")).thenReturn(Optional.of(user));
+        when(appUserRepository.save(user)).thenReturn(user);
+
+        var result = service.updateAppUserStatus("user-1", false);
+
+        assertEquals(AccountStatus.DISABLED, user.getAccountStatus());
+        assertEquals("DISABLED", result.getAccountStatus());
+        verify(appUserRepository).save(user);
+    }
+
+    @Test
+    void updateAppUserStatus_throwsWhenUserDoesNotExist() {
+        when(appUserRepository.findById("missing")).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class, () -> service.updateAppUserStatus("missing", true));
+        verify(appUserRepository, never()).save(any(AppUser.class));
+    }
+
+    private AppUser appUser(String id, AccountStatus status) {
+        AppUser user = new AppUser();
+        user.setId(id);
+        user.setName("Crew Member");
+        user.setUsername("crew");
+        user.setEmail("crew@example.com");
+        user.setWhatsappContactNo("+15550000000");
+        user.setDesignation(Designation.MASTER);
+        user.setShipName("MV Test");
+        user.setShipIMONumber("1234567");
+        user.setVerified(true);
+        user.setAccountStatus(status);
+        return user;
     }
 
     private AdminUser admin(AccountStatus status) {

@@ -1,6 +1,7 @@
 package com.shippex.service;
 
 import com.shippex.dto.admin.*;
+import com.shippex.dto.auth.CurrentUserResponse;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,4 +16,11 @@ public interface AdminService {
     void disableAdmin(String id);
 
     AdminLoginResponse login(AdminLoginRequest request);
+
+    List<CurrentUserResponse> getAllAppUsers();
+    CurrentUserResponse updateAppUserStatus(
+            String userId,
+            boolean enabled
+    );
+
 }

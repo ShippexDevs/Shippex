@@ -3,10 +3,12 @@ package com.shippex.service.impl;
 import com.shippex.constants.AccountStatus;
 import com.shippex.constants.Role;
 import com.shippex.dto.admin.*;
+import com.shippex.dto.auth.CurrentUserResponse;
 import com.shippex.exception.AdminNotFoundException;
 import com.shippex.exception.DuplicateEmailException;
 import com.shippex.exception.DuplicateUsernameException;
 import com.shippex.model.AdminUser;
+import com.shippex.model.AppUser;
 import com.shippex.repository.AdminUserRepository;
 import com.shippex.repository.AppUserRepository;
 import com.shippex.security.CustomUserDetails;
@@ -20,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -174,5 +177,61 @@ public class AdminServiceImpl implements AdminService {
                 .firstLogin(admin.getFirstLogin())
                 .build();
 
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CurrentUserResponse> getAllAppUsers() {
+        log.debug("Fetching all App Users for admin");
+        return appUserRepository
+                .findAllByOrderByCreatedAtDesc()
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Override
+    public CurrentUserResponse updateAppUserStatus(String userId, boolean enabled) {
+        AppUser user = appUserRepository.findById(userId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "App User not found with ID: " + userId
+                        )
+                );
+
+        user.setAccountStatus(
+                enabled
+                        ? AccountStatus.ACTIVE
+                        : AccountStatus.DISABLED
+        );
+
+        AppUser updatedUser = appUserRepository.save(user);
+
+        log.info(
+                "App User {} has been {}",
+                userId,
+                enabled ? "enabled" : "disabled"
+        );
+
+        return toResponse(updatedUser);
+    }
+
+    private CurrentUserResponse toResponse(AppUser user) {
+        return CurrentUserResponse.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .whatsappContactNo(user.getWhatsappContactNo())
+                .designation(user.getDesignation())
+                .shipName(user.getShipName())
+                .shipIMONumber(user.getShipIMONumber())
+                .verified(user.getVerified())
+                .accountStatus(
+                        user.getAccountStatus() != null
+                                ? user.getAccountStatus().toString()
+                                : null
+                )
+                .build();
     }
 }
