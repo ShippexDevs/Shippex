@@ -20,6 +20,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import com.shippex.constants.Designation;
+import com.shippex.dto.otp.VerifyOtpRequest;
 
 @Slf4j
 @Service
@@ -126,6 +128,57 @@ public class AppUserServiceImpl implements AppUserService {
                     return new UsernameNotFoundException(
                             "User not found."
                     );
-                });
+        });
+    }
+
+    @Override
+    public void updatePassword(String username, String currentPassword, String newPassword) {
+        AppUser user = getByUsername(username);
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new IllegalArgumentException("Current password is incorrect.");
+        }
+        updateUser(user, updated -> updated.setPassword(passwordEncoder.encode(newPassword)));
+    }
+
+    @Override
+    public void verifyAndUpdateWhatsappContactNo(String username, VerifyOtpRequest request) {
+        AppUser user = getByUsername(username);
+        otpService.verifyOtp(request);
+        updateUser(user, updated -> updated.setWhatsappContactNo(request.getPhoneNumber()));
+    }
+
+    @Override
+    public void updateName(String username, String name) {
+        updateUser(username, user -> user.setName(name));
+    }
+
+    @Override
+    public void updateEmail(String username, String email) {
+        updateUser(username, user -> user.setEmail(email));
+    }
+
+    @Override
+    public void updateDesignation(String username, Designation designation) {
+        updateUser(username, user -> user.setDesignation(designation));
+    }
+
+    @Override
+    public void updateShipName(String username, String shipName) {
+        updateUser(username, user -> user.setShipName(shipName));
+    }
+
+    @Override
+    public void updateShipIMONumber(String username, String shipIMONumber) {
+        updateUser(username, user -> user.setShipIMONumber(shipIMONumber));
+    }
+
+    private void updateUser(String username, java.util.function.Consumer<AppUser> update) {
+        updateUser(getByUsername(username), update);
+    }
+
+    private void updateUser(AppUser user, java.util.function.Consumer<AppUser> update) {
+        update.accept(user);
+        user.setLastUpdatedAt(LocalDateTime.now());
+        appUserRepository.save(user);
     }
 }

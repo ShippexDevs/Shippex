@@ -17,10 +17,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.Optional;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import com.shippex.dto.otp.VerifyOtpRequest;
+import com.shippex.exception.OtpException;
 
 @ExtendWith(MockitoExtension.class)
 class AppUserServiceImplTest {
@@ -219,5 +222,113 @@ class AppUserServiceImplTest {
                 appUserService.isUsernameAvailable("john123");
 
         assertThat(available).isFalse();
+    }
+
+    @Test
+    void updateProfileFields_shouldPersistEachChangedFieldAndRefreshTimestamp() {
+        AppUser user = new AppUser();
+        user.setUsername("john123");
+        when(appUserRepository.findByUsername("john123")).thenReturn(Optional.of(user));
+        when(appUserRepository.save(any(AppUser.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        appUserService.updateName("john123", "Jane Doe");
+        appUserService.updateEmail("john123", "jane@example.com");
+        appUserService.updateDesignation("john123", Designation.CHIEF_OFFICER);
+        appUserService.updateShipName("john123", "Endeavour");
+        appUserService.updateShipIMONumber("john123", "7654321");
+
+        assertThat(user.getName()).isEqualTo("Jane Doe");
+        assertThat(user.getEmail()).isEqualTo("jane@example.com");
+        assertThat(user.getDesignation()).isEqualTo(Designation.CHIEF_OFFICER);
+        assertThat(user.getShipName()).isEqualTo("Endeavour");
+        assertThat(user.getShipIMONumber()).isEqualTo("7654321");
+        assertThat(user.getLastUpdatedAt()).isNotNull();
+        verify(appUserRepository, times(5)).save(user);
+    }
+
+    @Test
+    void updatePassword_shouldEncodeBeforePersisting() {
+        AppUser user = new AppUser();
+        user.setUsername("john123");
+        when(appUserRepository.findByUsername("john123")).thenReturn(Optional.of(user));
+        user.setPassword("old-encoded");
+        when(passwordEncoder.matches("OldPassword123!", "old-encoded")).thenReturn(true);
+        when(passwordEncoder.encode("NewPassword123!")).thenReturn("encoded");
+        when(appUserRepository.save(any(AppUser.class))).thenReturn(user);
+
+        appUserService.updatePassword("john123", "OldPassword123!", "NewPassword123!");
+
+        assertThat(user.getPassword()).isEqualTo("encoded");
+        verify(passwordEncoder).encode("NewPassword123!");
+        verify(passwordEncoder).matches("OldPassword123!", "old-encoded");
+        verify(appUserRepository).save(user);
+    }
+
+    @Test
+    void updatePassword_shouldRejectIncorrectCurrentPasswordWithoutSaving() {
+        AppUser user = new AppUser();
+        user.setPassword("old-encoded");
+        when(appUserRepository.findByUsername("john123")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("wrong", "old-encoded")).thenReturn(false);
+
+        assertThatThrownBy(() -> appUserService.updatePassword("john123", "wrong", "new"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Current password is incorrect.");
+        verify(passwordEncoder, never()).encode(anyString());
+        verify(appUserRepository, never()).save(any());
+    }
+
+    @Test
+    void verifyAndUpdateWhatsappContactNo_shouldVerifyOtpBeforePersistingNumber() {
+        AppUser user = new AppUser();
+        when(appUserRepository.findByUsername("john123")).thenReturn(Optional.of(user));
+        when(appUserRepository.save(any(AppUser.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        VerifyOtpRequest request = new VerifyOtpRequest();
+        request.setPhoneNumber("+12025550123");
+        request.setOtp("123456");
+
+        appUserService.verifyAndUpdateWhatsappContactNo("john123", request);
+
+        assertThat(user.getWhatsappContactNo()).isEqualTo("+12025550123");
+        verify(otpService).verifyOtp(request);
+        verify(appUserRepository).save(user);
+    }
+
+    @Test
+    void verifyAndUpdateWhatsappContactNo_shouldNotPersistWhenOtpVerificationFails() {
+        AppUser user = new AppUser();
+        user.setWhatsappContactNo("+12025550000");
+        when(appUserRepository.findByUsername("john123")).thenReturn(Optional.of(user));
+        VerifyOtpRequest request = new VerifyOtpRequest();
+        request.setPhoneNumber("+12025550123");
+        request.setOtp("000000");
+        doThrow(new OtpException("Invalid OTP.")).when(otpService).verifyOtp(request);
+
+        assertThatThrownBy(() -> appUserService.verifyAndUpdateWhatsappContactNo("john123", request))
+                .isInstanceOf(OtpException.class)
+                .hasMessage("Invalid OTP.");
+        assertThat(user.getWhatsappContactNo()).isEqualTo("+12025550000");
+        verify(appUserRepository, never()).save(any());
+    }
+
+    @Test
+    void updateField_shouldFailWithoutPersistingWhenUserDoesNotExist() {
+        when(appUserRepository.findByUsername("missing")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> appUserService.updateName("missing", "New Name"))
+                .isInstanceOf(UsernameNotFoundException.class)
+                .hasMessage("User not found.");
+        verify(appUserRepository, never()).save(any());
+    }
+
+    @Test
+    void updateField_shouldPropagatePersistenceFailure() {
+        AppUser user = new AppUser();
+        when(appUserRepository.findByUsername("john123")).thenReturn(Optional.of(user));
+        when(appUserRepository.save(user)).thenThrow(new RuntimeException("Database down"));
+
+        assertThatThrownBy(() -> appUserService.updateShipName("john123", "New Ship"))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Database down");
     }
 }
