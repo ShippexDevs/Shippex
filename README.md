@@ -200,6 +200,19 @@ Expected response
 
 ---
 
+---
+
+# 🌳 Project Structure
+
+Explore the repository's folder structure and architecture visually using GitDiagram.
+
+🔗 **[View Shippex Repository Structure](https://gitdiagram.com/shippexdevs/shippex)**
+
+GitDiagram provides a visual representation of the repository, making it easier to understand the project organization, modules, and relationships between components.
+
+---
+
+
 # 📌 Upcoming Features
 
 - Address Management
