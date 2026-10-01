@@ -9,6 +9,12 @@ public interface AppUserService {
     RegisterAppUserResponse createAppUserDetails(RegisterAppUserRequest appUser);
     boolean isUsernameAvailable(String username);
     AppUser getByUsername(String username);
+    String getMaskedWhatsappContactNo(String username);
+    void generatePasswordResetOtp(String username);
+    void resetPassword(String username, String otp, String newPassword);
+    AppUser getByWhatsappContactNo(String phoneNumber);
+    void generatePasswordResetOtpForPhone(String phoneNumber);
+    void resetPasswordByPhone(String phoneNumber, String otp, String newPassword);
     void updatePassword(String username, String currentPassword, String newPassword);
     void verifyAndUpdateWhatsappContactNo(String username, VerifyOtpRequest request);
     void updateName(String username, String name);

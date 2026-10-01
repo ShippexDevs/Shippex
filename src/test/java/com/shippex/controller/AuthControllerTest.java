@@ -3,6 +3,7 @@ package com.shippex.controller;
 import com.shippex.dto.auth.LoginRequest;
 import com.shippex.dto.auth.LoginResponse;
 import com.shippex.service.AuthService;
+import com.shippex.dto.otp.PhoneOtpRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -46,5 +47,20 @@ class AuthControllerTest {
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         assertFalse(response.getBody().isSuccess());
         assertEquals("Invalid username or password.", response.getBody().getMessage());
+    }
+
+    @Test
+    void loginWithWhatsappOtp_returnsJwtResponse() {
+        PhoneOtpRequest request = new PhoneOtpRequest();
+        request.setPhoneNumber("+919876543210");
+        request.setOtp("123456");
+        LoginResponse loginResponse = LoginResponse.builder().accessToken("jwt").username("buyer").build();
+        when(authService.loginWithWhatsappOtp(request)).thenReturn(loginResponse);
+
+        var response = controller.loginWithWhatsappOtp(request);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertSame(loginResponse, response.getBody().getData());
+        verify(authService).loginWithWhatsappOtp(request);
     }
 }

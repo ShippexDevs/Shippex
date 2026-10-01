@@ -12,6 +12,9 @@ public interface RedisService {
 
     void delete(String key);
 
+    /** Atomically compares a stored value and deletes it only when it matches. */
+    int consumeIfMatches(String key, String expectedValue);
+
     boolean exists(String key);
 
     int incrementRetryCount(String key, Duration ttl);

@@ -5,15 +5,26 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+import java.util.List;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class RedisServiceImpl implements RedisService {
+
+    private static final DefaultRedisScript<Long> COMPARE_AND_CONSUME_SCRIPT =
+            new DefaultRedisScript<>(
+                    "local value = redis.call('get', KEYS[1]); " +
+                            "if not value then return -1 end; " +
+                            "if value == ARGV[1] then return redis.call('del', KEYS[1]) end; " +
+                            "return 0",
+                    Long.class
+            );
 
     private final RedisTemplate<String, Object> redisTemplate;
 
@@ -98,6 +109,27 @@ public class RedisServiceImpl implements RedisService {
         } catch (Exception ex) {
             log.error("Unexpected error while deleting key={}", key, ex);
             throw new RuntimeException("Unable to delete Redis key.", ex);
+        }
+    }
+
+    /**
+     * Atomically consumes a matching value. Returns 1 when consumed, 0 when
+     * the stored value did not match, and -1 when the key was missing.
+     */
+    public int consumeIfMatches(String key, String expectedValue) {
+        try {
+            Long result = redisTemplate.execute(
+                    COMPARE_AND_CONSUME_SCRIPT,
+                    List.of(key),
+                    expectedValue
+            );
+            return result == null ? -1 : result.intValue();
+        } catch (DataAccessException ex) {
+            log.error("Redis compare-and-consume failed. Key={}", key, ex);
+            throw ex;
+        } catch (Exception ex) {
+            log.error("Unexpected error while consuming Redis key={}", key, ex);
+            throw new RuntimeException("Unable to consume Redis value.", ex);
         }
     }
 

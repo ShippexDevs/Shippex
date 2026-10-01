@@ -5,6 +5,13 @@ import com.shippex.dto.auth.LoginResponse;
 import com.shippex.security.CustomUserDetails;
 import com.shippex.security.JwtService;
 import com.shippex.service.AuthService;
+import com.shippex.dto.otp.PhoneOtpRequest;
+import com.shippex.dto.otp.VerifyOtpRequest;
+import com.shippex.repository.AppUserRepository;
+import com.shippex.model.AppUser;
+import com.shippex.service.impl.OtpService;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -20,6 +27,8 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
 
     private final JwtService jwtService;
+    private final AppUserRepository appUserRepository;
+    private final OtpService otpService;
 
     @Override
     public LoginResponse login(LoginRequest request) {
@@ -41,6 +50,27 @@ public class AuthServiceImpl implements AuthService {
                 .tokenType("Bearer")
                 .username(user.getUsername())
                 .name(user.getName())
+                .build();
+    }
+
+    @Override
+    public LoginResponse loginWithWhatsappOtp(PhoneOtpRequest request) {
+        AppUser user = appUserRepository.findByWhatsappContactNo(request.getPhoneNumber())
+                .orElseThrow(() -> new UsernameNotFoundException("No account found for this WhatsApp number."));
+        CustomUserDetails userDetails = new CustomUserDetails(user);
+        if (!userDetails.isEnabled()) {
+            throw new DisabledException("Your account is disabled. Please contact support.");
+        }
+        VerifyOtpRequest otpRequest = new VerifyOtpRequest();
+        otpRequest.setPhoneNumber(user.getWhatsappContactNo());
+        otpRequest.setOtp(request.getOtp());
+        otpService.verifyOtp(otpRequest);
+        String token = jwtService.generateToken(userDetails);
+        return LoginResponse.builder()
+                .accessToken(token)
+                .tokenType("Bearer")
+                .username(userDetails.getUsername())
+                .name(userDetails.getName())
                 .build();
     }
 }

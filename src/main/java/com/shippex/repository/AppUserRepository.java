@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 
 public interface AppUserRepository extends MongoRepository<AppUser, String> {
     Optional<AppUser> findByUsername(String username);
+    Optional<AppUser> findByWhatsappContactNo(String whatsappContactNo);
     boolean existsByUsername(String username);
     @Query(value = "{ 'createdAt': { '$gte': ?0, '$lt': ?1 } }", count = true)
     long countByCreatedAtBetween(LocalDateTime from, LocalDateTime until);
