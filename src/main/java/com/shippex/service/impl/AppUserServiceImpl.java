@@ -172,6 +172,30 @@ public class AppUserServiceImpl implements AppUserService {
     }
 
     @Override
+    public AppUser getByWhatsappContactNo(String phoneNumber) {
+        return appUserRepository.findByWhatsappContactNo(phoneNumber)
+                .orElseThrow(() -> new UsernameNotFoundException("No account found for this WhatsApp number."));
+    }
+
+    @Override
+    public void generatePasswordResetOtpForPhone(String phoneNumber) {
+        AppUser user = getByWhatsappContactNo(phoneNumber);
+        GenerateOtpRequest request = new GenerateOtpRequest();
+        request.setPhoneNumber(user.getWhatsappContactNo());
+        otpService.generateOtp(request);
+    }
+
+    @Override
+    public void resetPasswordByPhone(String phoneNumber, String otp, String newPassword) {
+        AppUser user = getByWhatsappContactNo(phoneNumber);
+        VerifyOtpRequest request = new VerifyOtpRequest();
+        request.setPhoneNumber(user.getWhatsappContactNo());
+        request.setOtp(otp);
+        otpService.verifyOtp(request);
+        updateUser(user, updated -> updated.setPassword(passwordEncoder.encode(newPassword)));
+    }
+
+    @Override
     public void updatePassword(String username, String currentPassword, String newPassword) {
         AppUser user = getByUsername(username);
         if (!passwordEncoder.matches(currentPassword, user.getPassword())) {

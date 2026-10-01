@@ -5,6 +5,12 @@ import com.shippex.dto.auth.LoginResponse;
 import com.shippex.model.AppUser;
 import com.shippex.security.CustomUserDetails;
 import com.shippex.security.JwtService;
+import com.shippex.repository.AppUserRepository;
+import com.shippex.service.impl.OtpService;
+import com.shippex.dto.otp.PhoneOtpRequest;
+import com.shippex.constants.AccountStatus;
+import com.shippex.constants.Role;
+import com.shippex.exception.OtpException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,6 +25,7 @@ import org.springframework.security.core.Authentication;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import java.util.Optional;
 
 //✅ Successful login.
 //✅ AuthenticationManager is invoked.
@@ -36,6 +43,12 @@ class AuthServiceImplTest {
 
     @Mock
     private JwtService jwtService;
+
+    @Mock
+    private AppUserRepository appUserRepository;
+
+    @Mock
+    private OtpService otpService;
 
     @Mock
     private Authentication authentication;
@@ -60,6 +73,8 @@ class AuthServiceImplTest {
         user.setUsername("john123");
         user.setPassword("$2a$10$hashedPassword");
         user.setVerified(true);
+        user.setAccountStatus(AccountStatus.ACTIVE);
+        user.setRole(Role.USER);
 
         userDetails = new CustomUserDetails(user);
     }
@@ -196,5 +211,54 @@ class AuthServiceImplTest {
 
         assertThat(response.getTokenType())
                 .isEqualTo("Bearer");
+    }
+
+    @Test
+    void loginWithWhatsappOtp_verifiesOtpAndReturnsJwt() {
+        AppUser user = (AppUser) userDetails.getUser();
+        user.setWhatsappContactNo("+919876543210");
+        when(appUserRepository.findByWhatsappContactNo("+919876543210")).thenReturn(Optional.of(user));
+        when(jwtService.generateToken(any(CustomUserDetails.class))).thenReturn("jwt-token");
+        PhoneOtpRequest request = new PhoneOtpRequest();
+        request.setPhoneNumber("+919876543210");
+        request.setOtp("123456");
+
+        LoginResponse response = authService.loginWithWhatsappOtp(request);
+
+        assertThat(response.getAccessToken()).isEqualTo("jwt-token");
+        assertThat(response.getUsername()).isEqualTo("john123");
+        verify(otpService).verifyOtp(argThat(otp -> otp.getPhoneNumber().equals("+919876543210") && otp.getOtp().equals("123456")));
+        verify(jwtService).generateToken(argThat(details -> details.getUsername().equals("john123")));
+    }
+
+    @Test
+    void loginWithWhatsappOtp_doesNotIssueTokenWhenOtpIsInvalid() {
+        AppUser user = (AppUser) userDetails.getUser();
+        user.setWhatsappContactNo("+919876543210");
+        when(appUserRepository.findByWhatsappContactNo("+919876543210")).thenReturn(Optional.of(user));
+        doThrow(new OtpException("Invalid OTP.")).when(otpService).verifyOtp(any());
+        PhoneOtpRequest request = new PhoneOtpRequest();
+        request.setPhoneNumber("+919876543210");
+        request.setOtp("000000");
+
+        assertThatThrownBy(() -> authService.loginWithWhatsappOtp(request))
+                .isInstanceOf(OtpException.class);
+        verify(jwtService, never()).generateToken(any());
+    }
+
+    @Test
+    void loginWithWhatsappOtp_rejectsDisabledAccountWithoutVerifyingOtp() {
+        AppUser user = (AppUser) userDetails.getUser();
+        user.setWhatsappContactNo("+919876543210");
+        user.setAccountStatus(AccountStatus.DISABLED);
+        when(appUserRepository.findByWhatsappContactNo("+919876543210")).thenReturn(Optional.of(user));
+        PhoneOtpRequest request = new PhoneOtpRequest();
+        request.setPhoneNumber("+919876543210");
+        request.setOtp("123456");
+
+        assertThatThrownBy(() -> authService.loginWithWhatsappOtp(request))
+                .isInstanceOf(org.springframework.security.authentication.DisabledException.class);
+        verify(otpService, never()).verifyOtp(any());
+        verify(jwtService, never()).generateToken(any());
     }
 }

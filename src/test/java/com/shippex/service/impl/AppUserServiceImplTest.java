@@ -406,4 +406,52 @@ class AppUserServiceImplTest {
         verify(otpService, never()).verifyOtp(any());
         verify(appUserRepository, never()).save(any());
     }
+
+    @Test
+    void generatePasswordResetOtpForPhone_usesRegisteredNumber() {
+        AppUser user = new AppUser();
+        user.setWhatsappContactNo("+919876543210");
+        when(appUserRepository.findByWhatsappContactNo("+919876543210")).thenReturn(Optional.of(user));
+
+        appUserService.generatePasswordResetOtpForPhone("+919876543210");
+
+        verify(otpService).generateOtp(argThat(request -> request.getPhoneNumber().equals("+919876543210")));
+    }
+
+    @Test
+    void generatePasswordResetOtpForPhone_rejectsUnknownNumber() {
+        when(appUserRepository.findByWhatsappContactNo("+12025550123")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> appUserService.generatePasswordResetOtpForPhone("+12025550123"))
+                .isInstanceOf(UsernameNotFoundException.class);
+        verify(otpService, never()).generateOtp(any());
+    }
+
+    @Test
+    void resetPasswordByPhone_verifiesOtpAndPersistsEncodedPassword() {
+        AppUser user = new AppUser();
+        user.setWhatsappContactNo("+919876543210");
+        when(appUserRepository.findByWhatsappContactNo("+919876543210")).thenReturn(Optional.of(user));
+        when(passwordEncoder.encode("new-secret")).thenReturn("hashed-secret");
+        when(appUserRepository.save(any(AppUser.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        appUserService.resetPasswordByPhone("+919876543210", "123456", "new-secret");
+
+        assertThat(user.getPassword()).isEqualTo("hashed-secret");
+        verify(otpService).verifyOtp(argThat(request -> request.getPhoneNumber().equals("+919876543210") && request.getOtp().equals("123456")));
+        verify(appUserRepository).save(user);
+    }
+
+    @Test
+    void resetPasswordByPhone_doesNotPersistForInvalidOtp() {
+        AppUser user = new AppUser();
+        user.setWhatsappContactNo("+919876543210");
+        when(appUserRepository.findByWhatsappContactNo("+919876543210")).thenReturn(Optional.of(user));
+        doThrow(new OtpException("Invalid OTP.")).when(otpService).verifyOtp(any(VerifyOtpRequest.class));
+
+        assertThatThrownBy(() -> appUserService.resetPasswordByPhone("+919876543210", "000000", "new-secret"))
+                .isInstanceOf(OtpException.class);
+        verify(passwordEncoder, never()).encode(anyString());
+        verify(appUserRepository, never()).save(any());
+    }
 }
