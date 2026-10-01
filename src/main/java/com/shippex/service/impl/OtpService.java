@@ -157,12 +157,9 @@ public class OtpService {
                 );
             }
 
-            String savedOtp = redisService.get(
-                    otpKey,
-                    String.class
-            );
+            int consumeResult = redisService.consumeIfMatches(otpKey, request.getOtp());
 
-            if (savedOtp == null) {
+            if (consumeResult < 0) {
 
                 log.warn(
                         "OTP expired for phoneNumber={}",
@@ -174,7 +171,7 @@ public class OtpService {
                 );
             }
 
-            if (!savedOtp.equals(request.getOtp())) {
+            if (consumeResult == 0) {
 
                 int updatedRetryCount =
                         redisService.incrementRetryCount(
@@ -193,10 +190,7 @@ public class OtpService {
                 );
             }
 
-            /*
-             * OTP verified successfully.
-             * Store verification status for 1 hour.
-             */
+            /* OTP has been atomically consumed; preserve registration verification behavior. */
             redisService.set(
                     verifiedKey,
                     Boolean.TRUE,
