@@ -331,4 +331,79 @@ class AppUserServiceImplTest {
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("Database down");
     }
+
+    @Test
+    void getMaskedWhatsappContactNo_masksEverythingExceptFirstAndLastTwoDigits() {
+        AppUser user = new AppUser();
+        user.setWhatsappContactNo("+919876543210");
+        when(appUserRepository.findByUsername("john123")).thenReturn(Optional.of(user));
+
+        assertThat(appUserService.getMaskedWhatsappContactNo("john123")).isEqualTo("91********10");
+    }
+
+    @Test
+    void getMaskedWhatsappContactNo_rejectsMissingNumber() {
+        AppUser user = new AppUser();
+        when(appUserRepository.findByUsername("john123")).thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() -> appUserService.getMaskedWhatsappContactNo("john123"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("No WhatsApp number is associated with this account.");
+    }
+
+    @Test
+    void generatePasswordResetOtp_sendsOtpToUsersStoredPhone() {
+        AppUser user = new AppUser();
+        user.setWhatsappContactNo("+919876543210");
+        when(appUserRepository.findByUsername("john123")).thenReturn(Optional.of(user));
+
+        appUserService.generatePasswordResetOtp("john123");
+
+        ArgumentCaptor<com.shippex.dto.otp.GenerateOtpRequest> captor =
+                ArgumentCaptor.forClass(com.shippex.dto.otp.GenerateOtpRequest.class);
+        verify(otpService).generateOtp(captor.capture());
+        assertThat(captor.getValue().getPhoneNumber()).isEqualTo("+919876543210");
+    }
+
+    @Test
+    void resetPassword_verifiesOtpHashesAndPersistsPassword() {
+        AppUser user = new AppUser();
+        user.setWhatsappContactNo("+919876543210");
+        when(appUserRepository.findByUsername("john123")).thenReturn(Optional.of(user));
+        when(passwordEncoder.encode("new-secret")).thenReturn("hashed-secret");
+        when(appUserRepository.save(any(AppUser.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        appUserService.resetPassword("john123", "123456", "new-secret");
+
+        assertThat(user.getPassword()).isEqualTo("hashed-secret");
+        ArgumentCaptor<VerifyOtpRequest> captor = ArgumentCaptor.forClass(VerifyOtpRequest.class);
+        verify(otpService).verifyOtp(captor.capture());
+        assertThat(captor.getValue().getPhoneNumber()).isEqualTo("+919876543210");
+        assertThat(captor.getValue().getOtp()).isEqualTo("123456");
+        verify(appUserRepository).save(user);
+    }
+
+    @Test
+    void resetPassword_doesNotSaveWhenOtpIsInvalid() {
+        AppUser user = new AppUser();
+        user.setWhatsappContactNo("+919876543210");
+        when(appUserRepository.findByUsername("john123")).thenReturn(Optional.of(user));
+        doThrow(new OtpException("Invalid OTP.")).when(otpService).verifyOtp(any(VerifyOtpRequest.class));
+
+        assertThatThrownBy(() -> appUserService.resetPassword("john123", "000000", "new-secret"))
+                .isInstanceOf(OtpException.class)
+                .hasMessage("Invalid OTP.");
+        verify(passwordEncoder, never()).encode(anyString());
+        verify(appUserRepository, never()).save(any());
+    }
+
+    @Test
+    void resetPassword_missingUserFailsWithoutVerifyingOtpOrSaving() {
+        when(appUserRepository.findByUsername("missing")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> appUserService.resetPassword("missing", "123456", "new-secret"))
+                .isInstanceOf(UsernameNotFoundException.class);
+        verify(otpService, never()).verifyOtp(any());
+        verify(appUserRepository, never()).save(any());
+    }
 }

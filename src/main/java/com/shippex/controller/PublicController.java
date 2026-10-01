@@ -5,6 +5,8 @@ import com.shippex.dto.RegisterAppUserRequest;
 import com.shippex.dto.RegisterAppUserResponse;
 import com.shippex.dto.otp.GenerateOtpRequest;
 import com.shippex.dto.otp.VerifyOtpRequest;
+import com.shippex.dto.otp.UsernameRequest;
+import com.shippex.dto.otp.ResetPasswordRequest;
 import com.shippex.exception.OtpException;
 import com.shippex.service.AppUserService;
 import com.shippex.service.impl.OtpService;
@@ -87,5 +89,26 @@ public class PublicController {
         return ResponseEntity.ok(
                 ApiResponse.success("OTP verified successfully.")
         );
+    }
+
+    @PostMapping("/forget-password")
+    public ResponseEntity<ApiResponse<String>> forgetPassword(
+            @Valid @RequestBody UsernameRequest request) {
+        String maskedPhone = appUserService.getMaskedWhatsappContactNo(request.getUsername());
+        return ResponseEntity.ok(ApiResponse.success("Account found.", maskedPhone));
+    }
+
+    @PostMapping("/generate-otp-for-username")
+    public ResponseEntity<ApiResponse<Void>> generateOtpForUsername(
+            @Valid @RequestBody UsernameRequest request) {
+        appUserService.generatePasswordResetOtp(request.getUsername());
+        return ResponseEntity.ok(ApiResponse.success("OTP sent successfully."));
+    }
+
+    @PostMapping("/verify-otp-to-reset")
+    public ResponseEntity<ApiResponse<Void>> verifyOtpToResetPassword(
+            @Valid @RequestBody ResetPasswordRequest request) {
+        appUserService.resetPassword(request.getUsername(), request.getOtp(), request.getNewPassword());
+        return ResponseEntity.ok(ApiResponse.success("Password reset successfully."));
     }
 }

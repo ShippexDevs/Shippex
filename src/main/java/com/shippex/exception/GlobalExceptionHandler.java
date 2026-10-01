@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 @Slf4j
 @RestControllerAdvice
@@ -47,7 +48,7 @@ public class GlobalExceptionHandler {
         );
     }
 
-    @ExceptionHandler({ProductNotFoundException.class, OrderNotFoundException.class})
+    @ExceptionHandler({ProductNotFoundException.class, OrderNotFoundException.class, UsernameNotFoundException.class})
     public ResponseEntity<ApiResponse<Void>> handleNotFoundException(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.failure(ex.getMessage()));
