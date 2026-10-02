@@ -3,6 +3,9 @@ package com.shippex.controller;
 import com.shippex.dto.product.CreateProductRequest;
 import com.shippex.dto.product.ProductResponse;
 import com.shippex.dto.product.UpdateProductRequest;
+import com.shippex.dto.product.UpdateStockRequest;
+import com.shippex.dto.product.UpdateFeaturedRequest;
+import com.shippex.dto.product.UpdateActiveRequest;
 import com.shippex.model.Product;
 import com.shippex.model.AppUser;
 import com.shippex.constants.AccountStatus;
@@ -110,6 +113,26 @@ class ProductControllerTest {
         assertSame(response, adminController.addProductsBulk(request).getBody());
         when(productService.addProductsBulk(List.of())).thenReturn(List.of());
         assertTrue(adminController.addProductsBulk(List.of()).getBody().isEmpty());
+    }
+
+    @Test
+    void adminFieldEndpointsDelegateAndReturnMappedProducts() {
+        Product stockProduct = product("p-1", "Gloves");
+        stockProduct.setStock(12);
+        Product featuredProduct = product("p-1", "Gloves");
+        featuredProduct.setFeatured(true);
+        Product activeProduct = product("p-1", "Gloves");
+        activeProduct.setActive(false);
+        when(productService.updateProductStock("p-1", 12)).thenReturn(stockProduct);
+        when(productService.updateProductFeatured("p-1", true)).thenReturn(featuredProduct);
+        when(productService.updateProductActive("p-1", false)).thenReturn(activeProduct);
+
+        assertEquals(12, adminController.updateProductStock("p-1", new UpdateStockRequest(12)).getBody().getStock());
+        assertTrue(adminController.updateProductFeatured("p-1", new UpdateFeaturedRequest(true)).getBody().getFeatured());
+        assertFalse(adminController.updateProductActive("p-1", new UpdateActiveRequest(false)).getBody().getActive());
+        verify(productService).updateProductStock("p-1", 12);
+        verify(productService).updateProductFeatured("p-1", true);
+        verify(productService).updateProductActive("p-1", false);
     }
 
     private Product product(String id, String name) {

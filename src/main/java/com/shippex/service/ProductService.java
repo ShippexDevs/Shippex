@@ -11,6 +11,9 @@ public interface ProductService {
     Product addProduct(CreateProductRequest product);
     Product getProductById(String id);
     Product updateProductById(String id, UpdateProductRequest request);
+    Product updateProductStock(String id, Integer stock);
+    Product updateProductFeatured(String id, Boolean featured);
+    Product updateProductActive(String id, Boolean active);
     Product deleteProductById(String id);
     List<Product> getProductsByCategorySlug(String categorySlug);
     List<Product> getFeaturedProducts();
