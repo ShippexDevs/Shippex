@@ -107,6 +107,27 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    public Product updateProductStock(String id, Integer stock) {
+        Product product = findProductById(id);
+        product.setStock(stock);
+        return productRepository.save(product);
+    }
+
+    @Override
+    public Product updateProductFeatured(String id, Boolean featured) {
+        Product product = findProductById(id);
+        product.setFeatured(featured);
+        return productRepository.save(product);
+    }
+
+    @Override
+    public Product updateProductActive(String id, Boolean active) {
+        Product product = findProductById(id);
+        product.setActive(active);
+        return productRepository.save(product);
+    }
+
+    @Override
     public Product deleteProductById(String id) {
 
         log.debug("Deleting product with id: {}", id);

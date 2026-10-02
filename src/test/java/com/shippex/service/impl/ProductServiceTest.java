@@ -183,6 +183,45 @@ class ProductServiceImplTest {
     }
 
     @Test
+    void updateProductStock_ShouldChangeOnlyStock() {
+        when(productRepository.findById("1")).thenReturn(Optional.of(product));
+        when(productRepository.save(any(Product.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Product updated = productService.updateProductStock("1", 7);
+
+        assertEquals(7, updated.getStock());
+        assertTrue(updated.getFeatured());
+        assertTrue(updated.getActive());
+        verify(productRepository).save(product);
+    }
+
+    @Test
+    void updateProductFeaturedAndActive_ShouldChangeOnlyRequestedFlags() {
+        when(productRepository.findById("1")).thenReturn(Optional.of(product));
+        when(productRepository.save(any(Product.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Product updatedFeatured = productService.updateProductFeatured("1", false);
+        assertFalse(updatedFeatured.getFeatured());
+        assertTrue(updatedFeatured.getActive());
+
+        Product updatedActive = productService.updateProductActive("1", false);
+        assertFalse(updatedActive.getActive());
+        assertFalse(updatedActive.getFeatured());
+        verify(productRepository, times(2)).findById("1");
+        verify(productRepository, times(2)).save(product);
+    }
+
+    @Test
+    void fieldUpdates_ShouldThrowWhenProductNotFound() {
+        when(productRepository.findById("missing")).thenReturn(Optional.empty());
+
+        assertThrows(ProductNotFoundException.class, () -> productService.updateProductStock("missing", 1));
+        assertThrows(ProductNotFoundException.class, () -> productService.updateProductFeatured("missing", true));
+        assertThrows(ProductNotFoundException.class, () -> productService.updateProductActive("missing", true));
+        verify(productRepository, never()).save(any());
+    }
+
+    @Test
     void deleteProduct_ShouldDeleteProduct() {
 
         when(productRepository.findById("1"))
