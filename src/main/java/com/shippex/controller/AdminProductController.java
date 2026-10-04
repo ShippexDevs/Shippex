@@ -1,5 +1,6 @@
 package com.shippex.controller;
 
+import com.shippex.dto.ApiResponse;
 import com.shippex.dto.product.CreateProductRequest;
 import com.shippex.dto.product.ProductResponse;
 import com.shippex.dto.product.UpdateProductRequest;
@@ -9,22 +10,43 @@ import com.shippex.dto.product.UpdateActiveRequest;
 import com.shippex.mapper.ProductMapper;
 import com.shippex.model.Product;
 import com.shippex.service.ProductService;
+import com.shippex.util.Pagination;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.validation.annotation.Validated;
 
 import java.util.List;
 
 @RestController
+@Validated
 @RequestMapping("/api/admin/products")
 @RequiredArgsConstructor
 @Slf4j
 public class AdminProductController {
 
     private final ProductService productService;
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<ProductResponse>>> getAllProducts(
+            @RequestParam(defaultValue = "0") @Min(0) int offset,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int limit) {
+
+        List<ProductResponse> products = productService.getAllProductsForAdmin()
+                .stream()
+                .map(ProductMapper::toResponse)
+                .toList();
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "Products retrieved successfully.",
+                Pagination.slice(products, offset, limit)
+        ));
+    }
 
     @PostMapping
     public ResponseEntity<ProductResponse> addProduct(
