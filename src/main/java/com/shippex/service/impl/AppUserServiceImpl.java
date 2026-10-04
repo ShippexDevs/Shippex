@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import com.shippex.constants.Designation;
 import com.shippex.dto.otp.VerifyOtpRequest;
+import com.shippex.dto.otp.GenerateOtpRequest;
 
 @Slf4j
 @Service
@@ -129,6 +130,69 @@ public class AppUserServiceImpl implements AppUserService {
                             "User not found."
                     );
         });
+    }
+
+    @Override
+    public String getMaskedWhatsappContactNo(String username) {
+        String phoneNumber = getByUsername(username).getWhatsappContactNo();
+        if (phoneNumber == null || phoneNumber.isBlank()) {
+            throw new IllegalStateException("No WhatsApp number is associated with this account.");
+        }
+        String digits = phoneNumber.replaceAll("\\D", "");
+        if (digits.length() <= 4) {
+            return "*".repeat(digits.length());
+        }
+        return digits.substring(0, 2)
+                + "*".repeat(digits.length() - 4)
+                + digits.substring(digits.length() - 2);
+    }
+
+    @Override
+    public void generatePasswordResetOtp(String username) {
+        String phoneNumber = getByUsername(username).getWhatsappContactNo();
+        if (phoneNumber == null || phoneNumber.isBlank()) {
+            throw new IllegalStateException("No WhatsApp number is associated with this account.");
+        }
+        GenerateOtpRequest request = new GenerateOtpRequest();
+        request.setPhoneNumber(phoneNumber);
+        otpService.generateOtp(request);
+    }
+
+    @Override
+    public void resetPassword(String username, String otp, String newPassword) {
+        AppUser user = getByUsername(username);
+        if (user.getWhatsappContactNo() == null || user.getWhatsappContactNo().isBlank()) {
+            throw new IllegalStateException("No WhatsApp number is associated with this account.");
+        }
+        VerifyOtpRequest request = new VerifyOtpRequest();
+        request.setPhoneNumber(user.getWhatsappContactNo());
+        request.setOtp(otp);
+        otpService.verifyOtp(request);
+        updateUser(user, updated -> updated.setPassword(passwordEncoder.encode(newPassword)));
+    }
+
+    @Override
+    public AppUser getByWhatsappContactNo(String phoneNumber) {
+        return appUserRepository.findByWhatsappContactNo(phoneNumber)
+                .orElseThrow(() -> new UsernameNotFoundException("No account found for this WhatsApp number."));
+    }
+
+    @Override
+    public void generatePasswordResetOtpForPhone(String phoneNumber) {
+        AppUser user = getByWhatsappContactNo(phoneNumber);
+        GenerateOtpRequest request = new GenerateOtpRequest();
+        request.setPhoneNumber(user.getWhatsappContactNo());
+        otpService.generateOtp(request);
+    }
+
+    @Override
+    public void resetPasswordByPhone(String phoneNumber, String otp, String newPassword) {
+        AppUser user = getByWhatsappContactNo(phoneNumber);
+        VerifyOtpRequest request = new VerifyOtpRequest();
+        request.setPhoneNumber(user.getWhatsappContactNo());
+        request.setOtp(otp);
+        otpService.verifyOtp(request);
+        updateUser(user, updated -> updated.setPassword(passwordEncoder.encode(newPassword)));
     }
 
     @Override

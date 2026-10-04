@@ -299,10 +299,8 @@ class OtpServiceTest {
                 Integer.class))
                 .thenReturn(null);
 
-        when(redisService.get(
-                RedisConstants.getOtpKey(normalizedPhone),
-                String.class))
-                .thenReturn("123456");
+        when(redisService.consumeIfMatches(RedisConstants.getOtpKey(normalizedPhone), "123456"))
+                .thenReturn(1);
 
         otpService.verifyOtp(verifyRequest);
 
@@ -328,10 +326,8 @@ class OtpServiceTest {
                 Integer.class))
                 .thenReturn(null);
 
-        when(redisService.get(
-                RedisConstants.getOtpKey(normalizedPhone),
-                String.class))
-                .thenReturn("123456");
+        when(redisService.consumeIfMatches(RedisConstants.getOtpKey(normalizedPhone), "123456"))
+                .thenReturn(1);
 
         otpService.verifyOtp(verifyRequest);
 
@@ -351,10 +347,8 @@ class OtpServiceTest {
                 Integer.class))
                 .thenReturn(2);
 
-        when(redisService.get(
-                RedisConstants.getOtpKey(normalizedPhone),
-                String.class))
-                .thenReturn("123456");
+        when(redisService.consumeIfMatches(RedisConstants.getOtpKey(normalizedPhone), "123456"))
+                .thenReturn(1);
 
         otpService.verifyOtp(verifyRequest);
 
@@ -372,10 +366,8 @@ class OtpServiceTest {
                 Integer.class))
                 .thenReturn(1);
 
-        when(redisService.get(
-                RedisConstants.getOtpKey(normalizedPhone),
-                String.class))
-                .thenReturn("123456");
+        when(redisService.consumeIfMatches(RedisConstants.getOtpKey(normalizedPhone), "123456"))
+                .thenReturn(1);
 
         otpService.verifyOtp(verifyRequest);
 
@@ -397,16 +389,29 @@ class OtpServiceTest {
                 Integer.class))
                 .thenReturn(null);
 
-        when(redisService.get(
-                RedisConstants.getOtpKey(normalizedPhone),
-                String.class))
-                .thenReturn("123456");
+        when(redisService.consumeIfMatches(RedisConstants.getOtpKey(normalizedPhone), "123456"))
+                .thenReturn(1);
 
         otpService.verifyOtp(verifyRequest);
 
-        verify(redisService).get(
-                RedisConstants.getOtpKey(normalizedPhone),
-                String.class);
+        verify(redisService).consumeIfMatches(
+                RedisConstants.getOtpKey(normalizedPhone), "123456");
+    }
+
+    @Test
+    void verifyOtp_cannotReuseSuccessfullyConsumedOtp() {
+        String normalizedPhone = "+919876543210";
+        when(redisService.get(RedisConstants.getVerifyRetryKey(normalizedPhone), Integer.class))
+                .thenReturn(null);
+        when(redisService.consumeIfMatches(RedisConstants.getOtpKey(normalizedPhone), "123456"))
+                .thenReturn(1, -1);
+
+        otpService.verifyOtp(verifyRequest);
+        assertThatThrownBy(() -> otpService.verifyOtp(verifyRequest))
+                .isInstanceOf(OtpException.class)
+                .hasMessage("OTP has expired. Please generate a new OTP.");
+        verify(redisService, times(2))
+                .consumeIfMatches(RedisConstants.getOtpKey(normalizedPhone), "123456");
     }
 
 
@@ -434,7 +439,7 @@ class OtpServiceTest {
                 .hasMessageContaining("Too many invalid OTP attempts");
 
         verify(redisService, never())
-                .get(RedisConstants.getOtpKey(normalizedPhone), String.class);
+                .consumeIfMatches(anyString(), anyString());
 
         verify(redisService, never())
                 .set(anyString(), any(), any(Duration.class));
@@ -453,10 +458,8 @@ class OtpServiceTest {
                 Integer.class))
                 .thenReturn(null);
 
-        when(redisService.get(
-                RedisConstants.getOtpKey(normalizedPhone),
-                String.class))
-                .thenReturn(null);
+        when(redisService.consumeIfMatches(RedisConstants.getOtpKey(normalizedPhone), "123456"))
+                .thenReturn(-1);
 
         assertThatThrownBy(() ->
                 otpService.verifyOtp(verifyRequest))
@@ -477,10 +480,8 @@ class OtpServiceTest {
                 Integer.class))
                 .thenReturn(null);
 
-        when(redisService.get(
-                RedisConstants.getOtpKey(normalizedPhone),
-                String.class))
-                .thenReturn("654321");
+        when(redisService.consumeIfMatches(RedisConstants.getOtpKey(normalizedPhone), "123456"))
+                .thenReturn(0);
 
         when(redisService.incrementRetryCount(
                 RedisConstants.getVerifyRetryKey(normalizedPhone),
@@ -510,10 +511,8 @@ class OtpServiceTest {
                 Integer.class))
                 .thenReturn(3);
 
-        when(redisService.get(
-                RedisConstants.getOtpKey(normalizedPhone),
-                String.class))
-                .thenReturn("111111");
+        when(redisService.consumeIfMatches(RedisConstants.getOtpKey(normalizedPhone), "222222"))
+                .thenReturn(0);
 
         when(redisService.incrementRetryCount(
                 RedisConstants.getVerifyRetryKey(normalizedPhone),

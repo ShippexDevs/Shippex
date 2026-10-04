@@ -4,6 +4,7 @@ import com.shippex.dto.ApiResponse;
 import com.shippex.dto.auth.LoginRequest;
 import com.shippex.dto.auth.LoginResponse;
 import com.shippex.service.AuthService;
+import com.shippex.dto.otp.PhoneOtpRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,6 +51,18 @@ public class AuthController {
                                     "Invalid username or password."
                             )
                     );
+        }
+    }
+
+    @PostMapping("/verify-otp-to-login")
+    public ResponseEntity<ApiResponse<LoginResponse>> loginWithWhatsappOtp(
+            @Valid @RequestBody PhoneOtpRequest request) {
+        try {
+            LoginResponse response = authService.loginWithWhatsappOtp(request);
+            return ResponseEntity.ok(ApiResponse.success("Login successful.", response));
+        } catch (DisabledException ex) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.failure("Your account is disabled. Please contact support."));
         }
     }
 }

@@ -4,6 +4,10 @@ import com.shippex.dto.RegisterAppUserRequest;
 import com.shippex.dto.RegisterAppUserResponse;
 import com.shippex.dto.otp.GenerateOtpRequest;
 import com.shippex.dto.otp.VerifyOtpRequest;
+import com.shippex.dto.otp.UsernameRequest;
+import com.shippex.dto.otp.ResetPasswordRequest;
+import com.shippex.dto.otp.PhoneRequest;
+import com.shippex.dto.otp.PhoneResetPasswordRequest;
 import com.shippex.exception.OtpException;
 import com.shippex.service.AppUserService;
 import com.shippex.service.impl.OtpService;
@@ -71,5 +75,70 @@ class PublicControllerTest {
         assertEquals(HttpStatus.OK, controller.verifyOtp(verifyRequest).getStatusCode());
         verify(otpService).generateOtp(generate);
         verify(otpService).verifyOtp(verifyRequest);
+    }
+
+    @Test
+    void forgetPasswordReturnsMaskedNumberForExistingUser() {
+        UsernameRequest request = new UsernameRequest();
+        request.setUsername("buyer");
+        when(appUserService.getMaskedWhatsappContactNo("buyer")).thenReturn("91********10");
+
+        var response = controller.forgetPassword(request);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("91********10", response.getBody().getData());
+        verify(appUserService).getMaskedWhatsappContactNo("buyer");
+    }
+
+    @Test
+    void forgetPasswordPropagatesMissingUsernameForNotFoundHandling() {
+        UsernameRequest request = new UsernameRequest();
+        request.setUsername("missing");
+        when(appUserService.getMaskedWhatsappContactNo("missing"))
+                .thenThrow(new org.springframework.security.core.userdetails.UsernameNotFoundException("User not found."));
+
+        assertThrows(org.springframework.security.core.userdetails.UsernameNotFoundException.class,
+                () -> controller.forgetPassword(request));
+    }
+
+    @Test
+    void generateOtpForUsernameDelegatesAndReturnsSuccess() {
+        UsernameRequest request = new UsernameRequest();
+        request.setUsername("buyer");
+
+        var response = controller.generateOtpForUsername(request);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(appUserService).generatePasswordResetOtp("buyer");
+    }
+
+    @Test
+    void verifyOtpToResetDelegatesUsernameOtpAndNewPassword() {
+        ResetPasswordRequest request = new ResetPasswordRequest();
+        request.setUsername("buyer");
+        request.setOtp("123456");
+        request.setNewPassword("new-password");
+
+        var response = controller.verifyOtpToResetPassword(request);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(appUserService).resetPassword("buyer", "123456", "new-password");
+    }
+
+    @Test
+    void phoneBasedPasswordRecoveryFindsAccountSendsOtpAndResetsPassword() {
+        PhoneRequest phoneRequest = new PhoneRequest();
+        phoneRequest.setPhoneNumber("+919876543210");
+        when(appUserService.getByWhatsappContactNo("+919876543210")).thenReturn(new com.shippex.model.AppUser());
+        assertEquals(HttpStatus.OK, controller.forgetPasswordByPhone(phoneRequest).getStatusCode());
+        assertEquals(HttpStatus.OK, controller.generateOtpForPhone(phoneRequest).getStatusCode());
+
+        PhoneResetPasswordRequest reset = new PhoneResetPasswordRequest();
+        reset.setPhoneNumber("+919876543210");
+        reset.setOtp("123456");
+        reset.setNewPassword("new-password");
+        assertEquals(HttpStatus.OK, controller.verifyOtpToResetPasswordByPhone(reset).getStatusCode());
+        verify(appUserService).generatePasswordResetOtpForPhone("+919876543210");
+        verify(appUserService).resetPasswordByPhone("+919876543210", "123456", "new-password");
     }
 }
