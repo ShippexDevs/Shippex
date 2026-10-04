@@ -135,6 +135,28 @@ class ProductControllerTest {
         verify(productService).updateProductActive("p-1", false);
     }
 
+    @Test
+    void adminGetAllProductsReturnsMappedResultsAndSupportsOffsetPagination() {
+        List<Product> products = products(35);
+        products.getFirst().setActive(false);
+        products.getFirst().setFeatured(false);
+        when(productService.getAllProductsForAdmin()).thenReturn(products);
+
+        var firstPage = adminController.getAllProducts(0, 10);
+        var secondPage = adminController.getAllProducts(10, 20);
+
+        assertEquals(HttpStatus.OK, firstPage.getStatusCode());
+        assertTrue(firstPage.getBody().isSuccess());
+        assertEquals(10, firstPage.getBody().getData().size());
+        assertEquals("p-0", firstPage.getBody().getData().getFirst().getId());
+        assertFalse(firstPage.getBody().getData().getFirst().getActive());
+        assertFalse(firstPage.getBody().getData().getFirst().getFeatured());
+        assertEquals(20, secondPage.getBody().getData().size());
+        assertEquals("p-10", secondPage.getBody().getData().getFirst().getId());
+        assertEquals("p-29", secondPage.getBody().getData().getLast().getId());
+        verify(productService, times(2)).getAllProductsForAdmin();
+    }
+
     private Product product(String id, String name) {
         Product product = new Product();
         product.setId(id);

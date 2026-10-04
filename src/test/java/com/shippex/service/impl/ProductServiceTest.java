@@ -123,6 +123,22 @@ class ProductServiceImplTest {
     }
 
     @Test
+    void getAllProductsForAdmin_ShouldReturnAllRepositoryProducts() {
+        Product secondProduct = new Product();
+        secondProduct.setId("2");
+        secondProduct.setName("Disabled product");
+        secondProduct.setActive(false);
+        List<Product> expected = List.of(product, secondProduct);
+        when(productRepository.findAll()).thenReturn(expected);
+
+        List<Product> actual = productService.getAllProductsForAdmin();
+
+        assertSame(expected, actual);
+        assertFalse(actual.get(1).getActive());
+        verify(productRepository).findAll();
+    }
+
+    @Test
     void getProductById_ShouldReturnProduct() {
 
         when(productRepository.findById("1"))

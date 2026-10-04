@@ -25,6 +25,11 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    public List<Product> getAllProductsForAdmin() {
+        return productRepository.findAll();
+    }
+
+    @Override
     public Product addProduct(CreateProductRequest request) {
         log.debug("Request entered addProduct() for: {}", request.getSku());
 
