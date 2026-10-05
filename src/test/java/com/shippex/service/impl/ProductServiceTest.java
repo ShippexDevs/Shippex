@@ -307,7 +307,7 @@ class ProductServiceImplTest {
 
         product2.setId("2");
 
-        when(productRepository.findByCategorySlug(categorySlug))
+        when(productRepository.findByCategorySlugAndActiveTrue(categorySlug))
                 .thenReturn(List.of(product1, product2));
 
         List<Product> result =
@@ -324,7 +324,7 @@ class ProductServiceImplTest {
         assertEquals("Banana", result.get(1).getName());
         assertEquals(categorySlug, result.get(1).getCategorySlug());
 
-        verify(productRepository).findByCategorySlug(categorySlug);
+        verify(productRepository).findByCategorySlugAndActiveTrue(categorySlug);
     }
 
     @Test
@@ -332,7 +332,7 @@ class ProductServiceImplTest {
 
         String categorySlug = "non-existing-category";
 
-        when(productRepository.findByCategorySlug(categorySlug))
+        when(productRepository.findByCategorySlugAndActiveTrue(categorySlug))
                 .thenReturn(Collections.emptyList());
 
         List<Product> result =
@@ -341,7 +341,7 @@ class ProductServiceImplTest {
         assertNotNull(result);
         assertTrue(result.isEmpty());
 
-        verify(productRepository).findByCategorySlug(categorySlug);
+        verify(productRepository).findByCategorySlugAndActiveTrue(categorySlug);
     }
 
     @Test
