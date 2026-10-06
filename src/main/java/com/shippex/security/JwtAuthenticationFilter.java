@@ -77,6 +77,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         userDetailsService
                                 .loadUserByUsername(username);
 
+                if (!userDetails.isEnabled()) {
+                    log.warn(
+                            "JWT filter: rejecting disabled account for username={}",
+                            username
+                    );
+                    SecurityContextHolder.clearContext();
+                    response.sendError(
+                            HttpServletResponse.SC_UNAUTHORIZED,
+                            "Your account is disabled. Please contact support."
+                    );
+                    return;
+                }
+
                 log.info(
                         "JWT filter: user loaded={}, authorities={}",
                         userDetails.getUsername(),

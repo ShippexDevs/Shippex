@@ -151,7 +151,7 @@ public class ProductServiceImpl implements ProductService {
         log.debug("Fetching products with categorySlug: {}", categorySlug);
 
         List<Product> products =
-                productRepository.findByCategorySlug(categorySlug);
+                productRepository.findByCategorySlugAndActiveTrue(categorySlug);
 
         log.debug(
                 "Found {} products with categorySlug: {}",

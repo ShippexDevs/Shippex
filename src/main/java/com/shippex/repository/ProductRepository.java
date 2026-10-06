@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 
 public interface ProductRepository extends MongoRepository<Product, String> {
     boolean existsBySku(String sku);
-    List<Product> findByCategorySlug(String categorySlug);
+    List<Product> findByCategorySlugAndActiveTrue(String categorySlug);
     List<Product> findByFeaturedTrueAndActiveTrue();
     Optional<Product> findBySku(String sku);
     @Query(value = "{ 'createdAt': { '$gte': ?0, '$lt': ?1 } }", count = true)
