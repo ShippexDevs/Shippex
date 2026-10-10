@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 
 public interface ProductRepository extends MongoRepository<Product, String> {
     boolean existsBySku(String sku);
+    boolean existsByCategoryId(String categoryId);
     List<Product> findByCategorySlugAndActiveTrue(String categorySlug);
     List<Product> findByFeaturedTrueAndActiveTrue();
     Optional<Product> findBySku(String sku);
