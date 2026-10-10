@@ -19,17 +19,21 @@ public class CreateProductRequest {
     @NotBlank
     private String brand;
 
+    // Authoritative category metadata is loaded from MongoDB by categoryId.
     @NotBlank
+    private String categoryId;
+
+    // Retained for old clients; values are ignored by the service.
     private String sku;
+
+    // Retained for old clients; values are ignored by the service.
+    private String category;
+
+    // Retained for old clients; values are ignored by the service.
+    private String categorySlug;
 
     @NotBlank
     private String description;
-
-    @NotBlank
-    private String category;
-
-    @NotBlank
-    private String categorySlug;
 
     @NotEmpty
     private List<String> images;

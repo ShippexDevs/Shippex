@@ -23,6 +23,8 @@ public class ProductResponse {
 
     private String category;
 
+    private String categoryId;
+
     private String categorySlug;
 
     private List<String> images;
