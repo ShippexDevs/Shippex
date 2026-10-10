@@ -90,41 +90,6 @@ http://localhost:8080/swagger-ui.html
 
 The OpenAPI JSON document is available at `http://localhost:8080/v3/api-docs`. For protected endpoints, use **Authorize** in Swagger UI and enter your JWT access token; the `Bearer` prefix is added automatically. Obtain a user token from `POST /api/public/login` or an admin token from `POST /api/admin/login`.
 
-## Admin category imports
-
-The category import endpoint requires the existing admin JWT authorization (`ADMIN` or `SUPER_ADMIN`) and accepts 1–100 entries. Each item is persisted independently; imports are **not atomic**. Responses include an item index and `created`, `skipped`, or `failed` status. HTTP status is `201` if all entries were created, `200` if all were skipped, `207` if results are mixed, and `400` when every item failed. Bean validation errors reject the request before processing.
-
-```http
-POST /api/admin/categories/bulk
-Content-Type: application/json
-```
-
-```json
-[{"name":"Fruits","skuPrefix":"FR","description":"Fresh fruit","imageUrl":"https://example.test/fruits.jpg","active":true}]
-```
-
-Normalized name, slug, and SKU-prefix collisions are reported as `skipped`; existing categories are never overwritten. Retrying category imports is safe.
-
-Example response:
-
-```json
-{"success":true,"message":"Bulk category import processed; existing categories were skipped without changes.","data":{"items":[{"index":0,"status":"created","category":{"id":"resolved-by-the-server","name":"Fruits","slug":"fruits","skuPrefix":"FR"}}],"created":1,"skipped":0,"failed":0}}
-```
-
-Category changes in `PUT /api/admin/products/{id}` are selected with `categoryId`. The server updates the category ID and denormalized name/slug from that category and preserves the existing SKU. Legacy category name/slug fields in update requests are ignored. Category renames synchronize denormalized product names/slugs by `categoryId`.
-
-## Repair legacy product category IDs
-
-The repair runner is disabled by default. First run in dry-run mode against the intended database (`apply=false` by default):
-
-```bash
-java -jar target/Shippex-0.0.1-SNAPSHOT.jar \
-  --shippex.migration.category-links.enabled=true \
-  --shippex.migration.category-links.aliases='Electronic=Electronics,Frozen Food=Frozen Foods'
-```
-
-Aliases are optional comma-separated `legacy value=existing category name or slug` pairs. Matching otherwise uses normalized category names and slugs; ambiguity is reported without a write. Review the logged `MATCH`, `UNMATCHED`, `AMBIGUOUS`, and final count lines. To apply reviewed mappings, rerun explicitly with `--shippex.migration.category-links.apply=true`. The runner resolves every ID from the live category collection and updates **only** `categoryId` on matched legacy products. It never creates categories and can be safely rerun; previously valid relationships are counted and skipped. Back up the database and point `MONGODB_URI` at the intended environment before an apply run.
-
 Redis
 
 ```
