@@ -19,10 +19,12 @@ public class UpdateProductRequest {
 
     private String description;
 
-    @NotBlank
+    private String categoryId;
+
+    // Retained for compatibility; category metadata is resolved from categoryId.
     private String category;
 
-    @NotBlank
+    // Retained for compatibility; category metadata is resolved from categoryId.
     private String categorySlug;
 
     private List<String> images;

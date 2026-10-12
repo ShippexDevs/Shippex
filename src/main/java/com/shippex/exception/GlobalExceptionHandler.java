@@ -48,7 +48,7 @@ public class GlobalExceptionHandler {
         );
     }
 
-    @ExceptionHandler({ProductNotFoundException.class, OrderNotFoundException.class, UsernameNotFoundException.class})
+    @ExceptionHandler({ProductNotFoundException.class, CategoryNotFoundException.class, OrderNotFoundException.class, UsernameNotFoundException.class})
     public ResponseEntity<ApiResponse<Void>> handleNotFoundException(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.failure(ex.getMessage()));

@@ -4,10 +4,14 @@ import com.shippex.dto.product.CreateProductRequest;
 import com.shippex.dto.product.ProductResponse;
 import com.shippex.dto.product.UpdateProductRequest;
 import com.shippex.exception.ProductNotFoundException;
+import com.shippex.exception.CategoryNotFoundException;
 import com.shippex.mapper.ProductMapper;
 import com.shippex.model.Product;
 import com.shippex.repository.ProductRepository;
+import com.shippex.repository.CategoryRepository;
+import com.shippex.model.Category;
 import com.shippex.service.ProductService;
+import com.shippex.service.CategoryService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -19,9 +23,13 @@ import java.util.List;
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
+    private final CategoryService categoryService;
 
-    public ProductServiceImpl(ProductRepository productRepository) {
+    public ProductServiceImpl(ProductRepository productRepository, CategoryRepository categoryRepository, CategoryService categoryService) {
         this.productRepository = productRepository;
+        this.categoryRepository = categoryRepository;
+        this.categoryService = categoryService;
     }
 
     @Override
@@ -31,21 +39,18 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Product addProduct(CreateProductRequest request) {
-        log.debug("Request entered addProduct() for: {}", request.getSku());
-
-        if (productRepository.existsBySku(request.getSku())) {
-            log.error("Product already exists with SKU: {}", request.getSku());
-            throw new IllegalArgumentException(
-                    "Product already exists with SKU: " + request.getSku());
-        }
+        Category category = categoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new CategoryNotFoundException("Category not found: " + request.getCategoryId()));
+        if (!Boolean.TRUE.equals(category.getActive())) throw new IllegalArgumentException("Inactive category cannot be used for new products");
+        String generatedSku = categoryService.allocateNextSku(category);
 
         Product product = new Product(
                 request.getName(),
                 request.getBrand(),
-                request.getSku(),
+                generatedSku,
                 request.getDescription(),
-                request.getCategory(),
-                request.getCategorySlug(),
+                category.getName(),
+                category.getSlug(),
                 request.getImages(),
                 request.getCurrency(),
                 request.getCurrentPrice(),
@@ -54,6 +59,10 @@ public class ProductServiceImpl implements ProductService {
                 request.getStock(),
                 request.getDisplayOrder()
         );
+
+        product.setCategoryId(category.getId());
+        product.setCategory(category.getName());
+        product.setCategorySlug(category.getSlug());
 
         product.setTags(request.getTags());
 
@@ -69,7 +78,7 @@ public class ProductServiceImpl implements ProductService {
             product.setDeliveryTime(request.getDeliveryTime());
         }
 
-        log.debug("Saving Product information in db for: {}", request.getSku());
+        log.debug("Saving Product information in db for category {}", category.getId());
 
         return productRepository.save(product);
     }
@@ -90,8 +99,16 @@ public class ProductServiceImpl implements ProductService {
         product.setName(request.getName());
         product.setBrand(request.getBrand());
         product.setDescription(request.getDescription());
-        product.setCategory(request.getCategory());
-        product.setCategorySlug(request.getCategorySlug());
+        if (request.getCategoryId() != null && !request.getCategoryId().isBlank()) {
+            Category category = categoryRepository.findById(request.getCategoryId())
+                    .orElseThrow(() -> new CategoryNotFoundException("Category not found: " + request.getCategoryId()));
+            if (!Boolean.TRUE.equals(category.getActive())) {
+                throw new IllegalArgumentException("Inactive category cannot be assigned to a product");
+            }
+            product.setCategoryId(category.getId());
+            product.setCategory(category.getName());
+            product.setCategorySlug(category.getSlug());
+        }
         product.setImages(request.getImages());
         product.setCurrency(request.getCurrency());
         product.setCurrentPrice(request.getCurrentPrice());
@@ -114,6 +131,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Product updateProductStock(String id, Integer stock) {
         Product product = findProductById(id);
+
         product.setStock(stock);
         return productRepository.save(product);
     }
@@ -176,10 +194,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public List<ProductResponse> addProductsBulk(List<CreateProductRequest> products) {
-        return products.stream()
-                .filter(product -> !productRepository.existsBySku(product.getSku()))
-                .map(this::createProduct)
-                .toList();
+        return products.stream().map(this::addProduct).map(ProductMapper::toResponse).toList();
     }
 
     /**
@@ -194,11 +209,8 @@ public class ProductServiceImpl implements ProductService {
                 });
     }
 
-    private ProductResponse createProduct(
-            CreateProductRequest request) {
-
+    private ProductResponse createProduct(CreateProductRequest request) {
         Product product = new Product();
-
         product.setName(request.getName());
         product.setBrand(request.getBrand());
         product.setSku(request.getSku());
@@ -215,12 +227,9 @@ public class ProductServiceImpl implements ProductService {
         product.setActive(request.getActive());
         product.setDeliveryTime(request.getDeliveryTime());
         product.setTags(request.getTags());
-
         product.setCreatedAt(LocalDateTime.now());
         product.setUpdatedAt(LocalDateTime.now());
-
-        Product savedProduct = productRepository.save(product);
-
-        return ProductMapper.toResponse(savedProduct);
+        return ProductMapper.toResponse(productRepository.save(product));
     }
+
 }

@@ -5,7 +5,9 @@ import com.shippex.dto.product.ProductResponse;
 import com.shippex.dto.product.UpdateProductRequest;
 import com.shippex.exception.ProductNotFoundException;
 import com.shippex.model.Product;
+import com.shippex.model.Category;
 import com.shippex.repository.ProductRepository;
+import com.shippex.repository.CategoryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,6 +19,7 @@ import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -28,10 +31,13 @@ class ProductServiceImplTest {
     @Mock
     private ProductRepository productRepository;
 
-    @InjectMocks
+    @Mock private CategoryRepository categoryRepository;
+    @Mock private CategoryServiceImpl categoryService;
+
     private ProductServiceImpl productService;
 
     private Product product;
+    private Category category;
     private CreateProductRequest createRequest;
     private UpdateProductRequest updateRequest;
 
@@ -62,6 +68,7 @@ class ProductServiceImplTest {
         createRequest.setName("Apple");
         createRequest.setBrand("Fresh Farm");
         createRequest.setSku("SKU001");
+        createRequest.setCategoryId("category-1");
         createRequest.setDescription("Fresh Apples");
         createRequest.setCategory("Fruits");
         createRequest.setCategorySlug("fruits");
@@ -72,6 +79,12 @@ class ProductServiceImplTest {
         createRequest.setUnit("1 kg");
         createRequest.setStock(20);
         createRequest.setDisplayOrder(1);
+        category = new Category(); category.setId("category-1"); category.setName("Fruits"); category.setSlug("fruits"); category.setSkuPrefix("F"); category.setActive(true);
+        lenient().when(categoryRepository.findById(anyString())).thenReturn(Optional.of(category));
+        AtomicInteger sequence = new AtomicInteger();
+        lenient().when(categoryService.allocateNextSku(any())).thenAnswer(invocation -> "F-%03d".formatted(sequence.incrementAndGet()));
+        lenient().when(productRepository.save(any(Product.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        productService = new ProductServiceImpl(productRepository, categoryRepository, categoryService);
 
         updateRequest = new UpdateProductRequest();
         updateRequest.setName("Green Apple");
@@ -95,31 +108,33 @@ class ProductServiceImplTest {
     @Test
     void addProduct_ShouldSaveProduct() {
 
-        when(productRepository.existsBySku("SKU001")).thenReturn(false);
-        when(productRepository.save(any(Product.class))).thenReturn(product);
-
         Product saved = productService.addProduct(createRequest);
 
         assertNotNull(saved);
-        assertEquals("SKU001", saved.getSku());
+        assertEquals("F-001", saved.getSku());
+        assertEquals("category-1", saved.getCategoryId());
+        assertEquals("Fruits", saved.getCategory());
+        assertEquals("fruits", saved.getCategorySlug());
 
-        verify(productRepository).existsBySku("SKU001");
         verify(productRepository).save(any(Product.class));
+    }
+
+    @Test
+    void addProductRejectsMissingOrInactiveCategory() {
+        when(categoryRepository.findById("missing")).thenReturn(Optional.empty());
+        createRequest.setCategoryId("missing");
+        assertThrows(com.shippex.exception.CategoryNotFoundException.class, () -> productService.addProduct(createRequest));
+        category.setActive(false);
+        createRequest.setCategoryId("category-1");
+        assertThrows(IllegalArgumentException.class, () -> productService.addProduct(createRequest));
+        verify(productRepository, never()).save(any());
     }
 
     @Test
     void addProduct_ShouldThrowException_WhenSkuAlreadyExists() {
 
-        when(productRepository.existsBySku("SKU001")).thenReturn(true);
-
-        IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> productService.addProduct(createRequest));
-
-        assertEquals("Product already exists with SKU: SKU001", ex.getMessage());
-
-        verify(productRepository).existsBySku("SKU001");
-        verify(productRepository, never()).save(any());
+        Product saved = productService.addProduct(createRequest);
+        assertEquals("F-001", saved.getSku());
     }
 
     @Test
@@ -182,6 +197,38 @@ class ProductServiceImplTest {
 
         verify(productRepository).findById("1");
         verify(productRepository).save(product);
+    }
+
+    @Test
+    void updateProductUsesSelectedCategoryAndPreservesSku() {
+        when(productRepository.findById("1")).thenReturn(Optional.of(product));
+        Category next = new Category();
+        next.setId("category-2"); next.setName("Electronics"); next.setSlug("electronics"); next.setActive(true);
+        when(categoryRepository.findById("category-2")).thenReturn(Optional.of(next));
+        updateRequest.setCategoryId("category-2");
+        updateRequest.setCategory("stale frontend value");
+        updateRequest.setCategorySlug("stale-slug");
+        when(productRepository.save(any(Product.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Product updated = productService.updateProductById("1", updateRequest);
+
+        assertEquals("category-2", updated.getCategoryId());
+        assertEquals("Electronics", updated.getCategory());
+        assertEquals("electronics", updated.getCategorySlug());
+        assertEquals("SKU001", updated.getSku());
+    }
+
+    @Test
+    void updateProductRejectsMissingOrInactiveCategory() {
+        when(productRepository.findById("1")).thenReturn(Optional.of(product));
+        updateRequest.setCategoryId("missing");
+        when(categoryRepository.findById("missing")).thenReturn(Optional.empty());
+        assertThrows(com.shippex.exception.CategoryNotFoundException.class,
+                () -> productService.updateProductById("1", updateRequest));
+        updateRequest.setCategoryId("category-1");
+        category.setActive(false);
+        assertThrows(IllegalArgumentException.class, () -> productService.updateProductById("1", updateRequest));
+        verify(productRepository, never()).save(any());
     }
 
     @Test
@@ -421,55 +468,43 @@ class ProductServiceImplTest {
     @Test
     void addProductsBulk_ShouldSaveProduct_WhenSkuDoesNotExist() {
 
-        when(productRepository.existsBySku("SKU001"))
-                .thenReturn(false);
-
-        when(productRepository.save(any(Product.class)))
-                .thenReturn(product);
-
         List<ProductResponse> result =
                 productService.addProductsBulk(List.of(createRequest));
 
         assertNotNull(result);
         assertEquals(1, result.size());
 
-        assertEquals("SKU001", result.get(0).getSku());
+        assertEquals("F-001", result.get(0).getSku());
         assertEquals("Apple", result.get(0).getName());
 
-        verify(productRepository).existsBySku("SKU001");
         verify(productRepository).save(any(Product.class));
     }
 
     @Test
-    void addProductsBulk_ShouldSkipProduct_WhenSkuAlreadyExists() {
-
-        when(productRepository.existsBySku("SKU001"))
-                .thenReturn(true);
+    void addProductsBulk_ShouldIgnoreClientSkuAndCreateProduct() {
 
         List<ProductResponse> result =
                 productService.addProductsBulk(List.of(createRequest));
 
         assertNotNull(result);
-        assertTrue(result.isEmpty());
-
-        verify(productRepository).existsBySku("SKU001");
-
-        verify(productRepository, never())
-                .save(any(Product.class));
+        assertEquals(1, result.size());
+        verify(productRepository).save(any(Product.class));
     }
 
     @Test
-    void addProductsBulk_ShouldInsertOnlyNewProducts() {
+    void addProductsBulk_ShouldGenerateSkuForEachProduct() {
 
         CreateProductRequest existingRequest = new CreateProductRequest();
         existingRequest.setName("Existing Apple");
         existingRequest.setBrand("Fresh Farm");
         existingRequest.setSku("SKU001");
+        existingRequest.setCategoryId("category-1");
 
         CreateProductRequest newRequest = new CreateProductRequest();
         newRequest.setName("Banana");
         newRequest.setBrand("Fresh Farm");
         newRequest.setSku("SKU002");
+        newRequest.setCategoryId("category-1");
         newRequest.setDescription("Fresh Bananas");
         newRequest.setCategory("Fruits");
         newRequest.setCategorySlug("fruits");
@@ -499,12 +534,6 @@ class ProductServiceImplTest {
 
         savedProduct.setId("2");
 
-        when(productRepository.existsBySku("SKU001"))
-                .thenReturn(true);
-
-        when(productRepository.existsBySku("SKU002"))
-                .thenReturn(false);
-
         when(productRepository.save(any(Product.class)))
                 .thenReturn(savedProduct);
 
@@ -514,33 +543,22 @@ class ProductServiceImplTest {
                 );
 
         assertNotNull(result);
-        assertEquals(1, result.size());
+        assertEquals(2, result.size());
 
-        assertEquals("SKU002", result.get(0).getSku());
-        assertEquals("Banana", result.get(0).getName());
+        assertEquals("Banana", result.get(1).getName());
 
-        verify(productRepository).existsBySku("SKU001");
-        verify(productRepository).existsBySku("SKU002");
-
-        verify(productRepository, times(1))
+        verify(productRepository, times(2))
                 .save(any(Product.class));
     }
 
     @Test
-    void addProductsBulk_ShouldNotUpdateExistingProduct() {
-
-        when(productRepository.existsBySku("SKU001"))
-                .thenReturn(true);
+    void addProductsBulk_ShouldNotUseClientSkuAsGeneratedValue() {
 
         List<ProductResponse> result =
                 productService.addProductsBulk(List.of(createRequest));
 
-        assertTrue(result.isEmpty());
-
-        verify(productRepository).existsBySku("SKU001");
-
-        verify(productRepository, never())
-                .save(any(Product.class));
+        assertEquals(1, result.size());
+        verify(productRepository).save(any(Product.class));
     }
 
     @Test

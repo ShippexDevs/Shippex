@@ -15,6 +15,7 @@ public class ProductMapper {
                 .sku(product.getSku())
                 .description(product.getDescription())
                 .category(product.getCategory())
+                .categoryId(product.getCategoryId())
                 .categorySlug(product.getCategorySlug())
                 .images(product.getImages())
                 .currency(product.getCurrency())

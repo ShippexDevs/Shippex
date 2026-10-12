@@ -25,6 +25,7 @@ public class Product {
     @Indexed(unique = true)
     private String sku; // internal id
     private String description;
+    private String categoryId;
     private String category;
     private String categorySlug;
     private List<String> images;
